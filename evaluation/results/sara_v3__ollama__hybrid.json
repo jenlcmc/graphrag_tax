@@ -2,26 +2,26 @@
   "dataset": "sara_v3",
   "model": "ollama:qwen3.5:2b",
   "mode": "hybrid",
-  "n_cases": 1,
+  "n_cases": 2,
   "cases": [
     {
       "id": "s151_d_1_neg",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
       "rubric": "Contradiction",
-      "response": "No, Alice's exemption amount under **Section 151(d)(1)** of the Code is **not** equal to $0.\n\nUnder **Section 151(d)(1)** (which was repealed and renumbered, currently found in **Section 151(e)(1)**), the exemption applies if a foreign national or nonresident alien individual (or certain other persons) is a **resident of the United States** but not a citizen of the United States (a \"nonresident alien\" as defined in **Section 7701(a)(30)** of the Internal Revenue Code).\n\nThe statutory text states that such an individual shall be entitled to a deduction or credit of the amount of the tax imposed on him as a resident of the United States (or of the other taxing authority). Specifically, under **26 USC \u00a774(b)** (for income tax) and **26 USC \u00a76771(d)** (for estate/income tax), a \"nonresident alien resident\" is eligible for this exemption **if**:\n1.  He or she is a resident of the U.S. (e.g., has domicile in the U.S. for more than 183 days in a calendar year, or a valid DSR or HSR status);\n2.  The individual is **not** a U.S. citizen; and\n3.  The individual is an **insignificant foreign individual** (or, if the individual is a corporation, an insignificant foreign corporation).\n\nIf Alice's status falls within these specific criteria, she is entitled to the exemption. However, the exemption is a percentage of her taxable income (or net income), not a fixed dollar amount.\n\n### Calculation Example\nTo determine the specific amount (if she qualifies), you would apply the percentage rate to her taxable income.\n\n**Scenario:**\n*   **Taxable Income:** $100,000\n*   **Applicable Percentage:** 20% (The rate for \"insignificant\" foreign individuals under \u00a76771(d)(2) and \u00a774(b)(3))\n\n**Calculation:**\n$$ \\text{Exemption} = \\text{Taxable Income} \\times \\text{Percentage Rate} $$\n$$ \\text{Exemption} = \\$100,000 \\times 0.20 $$\n$$ \\text{Exemption} = \\$20,000 $$\n\n**Conclusion:**\nIf Alice qualifies as a nonresident alien resident, her exemption is calculated based on her tax rate (20% for insignificant foreign individuals), which results in **$20,000**. She is not entitled to $0.",
+      "response": "### Step-by-Step Deduction\n\n1.  **Analyze the Claim**: The question asks to determine if Alice's exemption amount under section 151(d)(1) is exactly zero ($0). This implies we must verify the status of her deduction.\n2.  **Analyze the Facts**:\n    *   From the `%SARA Structured Facts`: `s151_b_applies(\"Alice\",2015)`.\n    *   The rule `s151_b_applies/2` combined with the text \"%SARA Case Text\" (\"Alice is entitled to an exemption under section 151(b)... No other taxpayer is entitled to a deduction for Alice in 2015\") indicates that for the year 2015, Alice is a taxpayer entitled to a deduction under Section 151(b).\n    *   Crucially, the text states: \"No other taxpayer is entitled to a deduction for Alice\". In the context of SARA (Simplified Adjustments for Reconciliation and Adjustment), this phrasing suggests Alice's deduction under \u00a7151(b) is the specific mechanism being addressed, and she is *not* entitled to *any* other specific deduction (other than the one linked by the `s151_b_applies` fact).\n3.  **Evaluate the Connection to 151(d)(1)**:\n    *   The prompt provides an allowed citation list of: `26 USC \u00a7151(b)` and `26 USC \u00a7151(d)(1)`.\n    *   The provided facts establish that Alice is entitled to a deduction under \u00a7151(b).\n    *   The provided facts do *not* explicitly state the *amount* (the exact value) of the deduction under \u00a7151(b) or \u00a7151(d)(1) in the text provided.\n    *   Furthermore, under Section 151(b) and related regulations (like IRS Pub. 17), an exemption/allowance is usually a dollar amount or a specific percentage (like 100% or 50% of income). However, without the specific amount defined in the facts (e.g., \"Alice is allowed $15,000\"), it is impossible to determine if that amount is equal to zero.\n4.  **Logical Conclusion**:\n    *   We know Alice is eligible for a deduction.\n    *   We do not know the specific dollar amount of that deduction.\n    *   Therefore, we cannot conclude that the amount is $0. It could be $0, or it could be a specific positive number.\n    *   Since the evidence is insufficient to confirm the claim that the amount is zero, nor is it evidence to the contrary (the facts don't explicitly say it *isn't* zero, just that she is entitled to the deduction, likely meaning she is entitled to the standard exemption amount for that filing year, which is not zero).\n    *   Wait, let's re-read carefully: \"No other taxpayer is entitled to a deduction for Alice in 2015.\" In SARA logic, if a taxpayer is *not* entitled to *any* deduction, their specific claim (like the $X amount under \u00a7151(b)) is effectively non-existent. However, the `s151_b_applies` fact implies the deduction *mechanism* exists for her.\n    *   Regardless of the semantic complexity of SARA, from the *provided text alone*, we cannot derive a specific numeric value for the deduction amount. We cannot mathematically verify if the deduction amount equals zero based solely on the boolean fact `s151_b_applies`. The text does not contain a numeric claim about the amount.\n\n5.  **Label Determination**:\n    *   Since the facts do not provide the specific numeric amount of the deduction, we cannot determine if it is $0.\n    *   Therefore, the relationship between the provided facts and the statement \"Alice's exemption amount... is equal to $0\" is unknown.\n\nFinal Answer: Unknown",
       "mode": "hybrid",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
-        "26 USC \u00a71017(b)",
-        "26 USC \u00a7105(a)",
-        "26 USC \u00a7105(c)",
-        "26 USC \u00a7105(f)",
-        "26 USC \u00a7105(h)",
-        "26 USC \u00a71271(c)",
-        "26 USC \u00a71273(c)",
-        "26 USC \u00a71274(c)",
-        "26 USC \u00a71281(b)",
-        "26 USC \u00a71341(a)"
+        "26 USC \u00a7163(b)",
+        "26 USC \u00a7163(e)",
+        "26 USC \u00a7163(f)",
+        "26 USC \u00a7163(g)",
+        "26 USC \u00a7163(h)",
+        "26 USC \u00a7163(i)",
+        "26 USC \u00a7163(k)",
+        "26 USC \u00a7163(l)",
+        "26 USC \u00a7163(m)",
+        "26 USC \u00a7170(f)"
       ],
       "n_chunks": 10,
       "retrieval_metrics": {
@@ -33,31 +33,116 @@
         }
       },
       "citation_metrics": {
-        "n_citations": 7,
+        "n_citations": 3,
         "n_supported_citations": 0,
         "citation_precision": 0.0,
         "citation_coverage": 0.0,
-        "citation_sentences": 4,
+        "citation_sentences": 9,
         "grounded_sentences": 0,
         "grounding_rate": 0.0,
         "citations": [
+          "26 USC \u00a7151(b)",
           "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(e)(1)",
-          "26 USC \u00a76771(d)",
-          "26 USC \u00a76771(d)(2)",
-          "26 USC \u00a774(b)",
-          "26 USC \u00a774(b)(3)",
-          "26 USC \u00a77701(a)(30)"
+          "IRS Pub. 17"
         ],
         "supported_citations": []
       },
       "scoring": {
-        "earned": 0.0,
+        "earned": 0.25,
         "total": 1.0,
-        "feedback": "Expected Contradiction; matched=False",
+        "feedback": "Expected Contradiction; predicted_label=unknown; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "unknown",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
         "rouge1": 0.0,
         "rouge2": 0.0,
         "rougeL": 0.0
+      }
+    },
+    {
+      "id": "s151_d_1_pos",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
+      "rubric": "Entailment",
+      "response": "### Reasoning Process\n\n1.  **Analyze the SARA Case Text**:\n    The provided text states: \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\"\n    It explicitly states: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    There is no specific numerical value (e.g., $1,000 or $2,000) associated with Alice's exemption amount in the text.\n\n2.  **Analyze the Question**:\n    The question asks if \"Alice's exemption amount under section 151(d)(1) is equal to $2000?\"\n    This question presupposes a specific dollar value for the exemption that is not present in the source text.\n\n3.  **Evaluate Legal Context (for verification, though the text doesn't contain it)**:\n    Under the Internal Revenue Code, Section 151(d)(1) relates to the deduction of the cost of an out-of-pocket medical treatment. Section 151(b) generally allows a deduction for a taxpayer for their own tax return. The relationship between \"section 151(b)\" (the mechanism for Alice's deduction) and the specific \"amount\" defined in \"section 151(d)(1)\" (the actual dollar limit) varies by statute and specific circumstances. However, without the text stating a specific dollar amount for Alice in Section 151(d)(1), the text provides no evidence that the amount is $2000.\n\n4.  **Conclusion**:\n    Since the SARA structured facts do not contain any information regarding the specific monetary value of Alice's exemption, it is impossible to determine if it equals $2000 based *only* on the provided text.\n\n5.  **Mapping to Label Format**:\n    Since we cannot derive a truth value (True or False) from the text, the relationship cannot be established as Entailment or Contradiction.\n    Label: Unknown.\n\nFinal Answer: Unknown",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7163(b)",
+        "26 USC \u00a7163(e)",
+        "26 USC \u00a7163(f)",
+        "26 USC \u00a7163(g)",
+        "26 USC \u00a7163(h)",
+        "26 USC \u00a7163(i)",
+        "26 USC \u00a7163(k)",
+        "26 USC \u00a7163(l)",
+        "26 USC \u00a7163(m)",
+        "26 USC \u00a7170(f)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.0,
+        "mrr": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 6,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.25,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=unknown; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "unknown",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0071,
+        "rouge2": 0.0,
+        "rougeL": 0.0071
       }
     }
   ]

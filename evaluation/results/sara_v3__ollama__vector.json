@@ -1,0 +1,164 @@
+{
+  "dataset": "sara_v3",
+  "model": "ollama:qwen3.5:2b",
+  "mode": "vector",
+  "n_cases": 2,
+  "cases": [
+    {
+      "id": "s151_d_1_neg",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
+      "rubric": "Contradiction",
+      "response": "### Step 1: Identify the Relevant Statutes and Conditions\n\n1.  **Exemption Amount Definition**:\n    According to **26 USC \u00a7151(d)(1)**, the standard \"exemption amount\" is **$2,000**.\n\n2.  **Condition for Reduction to Zero**:\n    The amount is reduced to $0 if **26 USC \u00a7151(d)(2)** applies:\n    *   There must be a **deduction allowed under \u00a7151** for the taxpayer.\n    *   The deduction for the taxpayer must be allowable to **another taxpayer** for the taxable year beginning in the **calendar year** the individual's taxable year begins.\n\n3.  **Analysis of Alice's Status**:\n    *   The facts state: \"Alice is entitled to an exemption under section 151(b)...\"\n    *   **\u00a7151(b)** specifically allows the taxpayer (Alice) and their spouse to claim exemptions. It implies that \u00a7151(d)(2)(C) (\"An exemption... for each individual who is a dependent... of the taxpayer...\") is being utilized by Alice herself.\n    *   The facts state: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    *   **\u00a726 USC \u00a724(a)** states that a deduction under \u00a7151 is allowed for a *qualifying child* for which the taxpayer is allowed a deduction under \u00a7151.\n    *   Since the facts explicitly state \"No other taxpayer is entitled to a deduction for Alice,\" the condition for \u00a7151(d)(2) (i.e., the deduction being allowable to *another* taxpayer) is **not met**. The deduction is only allowable to Alice herself.\n\n4.  **Applicable Section**:\n    *   Because the deduction is not allowable to another taxpayer, **26 USC \u00a7151(d)(2)** does not apply.\n    *   Therefore, Alice is entitled to the full exemption amount defined in \u00a7151(d)(1).\n\n### Step 2: Perform Calculation\n\n*   **Standard Exemption Amount** (\u00a7151(d)(1)): $2,000.\n*   **Phaseout Calculation** (\u00a7151(d)(3)):\n    *   Calculate excess over the threshold for \u00a7151(d)(3)(B). For a single taxpayer (Alice is not specified as married or with a spouse having no income), the threshold is **$1,250** (derived from \u00a7151(d)(3)(B) substitution for a single filer).\n    *   The facts do not indicate Alice's Adjusted Gross Income (AGI) exceeds $1,250. In the absence of this information, we assume the exemption is not reduced.\n    *   Percentage reduction: $2\\%$ for every $2,500$ (or fraction thereof) over $1,250$.\n    *   Since AGI is not stated to exceed the threshold, no reduction applies.\n*   **Conclusion**:\n    *   Exemption Amount = $2,000$.\n    *   The question asks if the amount is equal to **$0**.\n    *   $2,000 \\neq 0$.\n\nTherefore, the statement \"Alice's exemption amount... is equal to $0$\" is **False**.\n\n### Step 3: Determine Entailment/Contradiction\n\n*   The question asserts a specific fact: \"Alice's exemption amount... is equal to $0\".\n*   Our reasoning proves this fact is **False** given the statutory rules and the facts.\n*   In Entailment tasks, a \"Contradiction\" occurs when the premise (facts) contradicts the hypothesis (question). Since the hypothesis contradicts the derived truth, the answer is Contradiction.\n*   According to the prompt instructions: \"map False=>Contradiction\".\n\nFinal Answer: Contradiction",
+      "mode": "vector",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "SARA Source: 26 USC \u00a7151",
+        "26 USC \u00a7151(d)",
+        "I1040X: p013 s05 worksheet, multiply the applicable dollar amount shown in the",
+        "26 USC \u00a7192(a)",
+        "26 USC \u00a7221(c)",
+        "I1040X: p008 s08 Who must use the Deduction for Exemptions Worksheet. If",
+        "26 USC \u00a724(a)",
+        "Form 1040 Instructions: p105 s03 Dependents:",
+        "26 USC \u00a7190(c)",
+        "I1040SJ: p007 s01 Page 7"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.0,
+        "mrr": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 9,
+        "n_supported_citations": 1,
+        "citation_precision": 0.1111,
+        "citation_coverage": 0.1111,
+        "citation_sentences": 11,
+        "grounded_sentences": 1,
+        "grounding_rate": 0.0909,
+        "citations": [
+          "26 USC \u00a7151",
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(2)",
+          "26 USC \u00a7151(d)(2)(C)",
+          "26 USC \u00a7151(d)(3)",
+          "26 USC \u00a7151(d)(3)(B)",
+          "26 USC \u00a724(a)",
+          "26 USC \u00a726"
+        ],
+        "supported_citations": [
+          "26 USC \u00a724(a)"
+        ]
+      },
+      "scoring": {
+        "earned": 0.8055,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.22",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151",
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(2)",
+          "26 USC \u00a7151(d)(2)(C)",
+          "26 USC \u00a7151(d)(3)",
+          "26 USC \u00a7151(d)(3)(B)",
+          "26 USC \u00a724(a)",
+          "26 USC \u00a726"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 0.2222,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 9,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0043,
+        "rouge2": 0.0,
+        "rougeL": 0.0043
+      }
+    },
+    {
+      "id": "s151_d_1_pos",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
+      "rubric": "Entailment",
+      "response": "Based on the provided text and instructions:\n\n1.  **Analyze the Facts**: The text states \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\" It also states \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n2.  **Analyze the Question**: The question asks if \"Alice's exemption amount under section 151(d)(1) is equal to $2000.\"\n3.  **Evaluate the Relationship**:\n    *   The facts confirm Alice is entitled to an exemption under 151(b). However, they do not specify the *amount* of that exemption.\n    *   The question assumes a specific numerical value ($2000) for the exemption amount based on the cited rule 151(d)(1).\n    *   The provided facts do not contain the specific dollar amount associated with the exemption or the rule 151(d)(1). Therefore, we cannot determine if the amount is exactly $2000. The facts establish entitlement, but not the specific monetary value or the applicability of 151(d)(1) (which usually relates to the deduction for exemptions claimed by other taxpayers, whereas 151(b) covers the exemption for the taxpayer themselves).\n4.  **Determine the Label**: Since the information required to verify the claim (the specific exemption amount) is missing in the facts, the relationship is indeterminate.\n    *   Entailment would require the facts to *prove* the statement is true.\n    *   Contradiction would require the facts to *prove* the statement is false.\n    *   Unknown is the correct classification because the facts do not provide enough information to support or refute the specific numerical claim.\n\nUnknown\n\nFinal Answer: Unknown",
+      "mode": "vector",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "I1040X: p013 s05 worksheet, multiply the applicable dollar amount shown in the",
+        "26 USC \u00a7151(d)",
+        "SARA Source: 26 USC \u00a7151",
+        "IRS Pub. 505: p045 s03 Worksheet 2-11.",
+        "I1040X: p008 s07 complete Part I, Exemptions, on page 2 of Form 1040X if:",
+        "IRS Pub. 505: p043 s04 Worksheet 2-10) .......................................... 6.",
+        "26 USC \u00a755(d)",
+        "IRS Pub. 505: p040 s02 Worksheet 2-6.",
+        "I1040C: p009 s03 greater of:",
+        "26 USC \u00a7190(c)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.0,
+        "mrr": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 2,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.25,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=unknown; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "unknown",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0079,
+        "rouge2": 0.0,
+        "rougeL": 0.0079
+      }
+    }
+  ]
+}

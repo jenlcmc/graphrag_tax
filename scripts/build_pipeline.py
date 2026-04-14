@@ -32,6 +32,7 @@ from src.indexing.graph_index import GraphIndex
 from src.indexing.vector_index import VectorIndex
 from src.ingestion.irs_pdf_parser import parse as parse_irs_pdf
 from src.ingestion.irs_xml_parser import parse as parse_irs_xml
+from src.ingestion.sara_source_parser import parse as parse_sara_source
 from src.ingestion.usc26_parser import parse as parse_usc26
 from src.preprocessing.chunker import apply_to_all
 from src.preprocessing.normalizer import annotate_chunks, load_nlp
@@ -104,6 +105,18 @@ def discover_irs_sources(knowledge_dir: Path, excluded: set[str]) -> list[tuple[
     return [(source, path, fmt) for source, (path, fmt) in sorted(sources.items())]
 
 
+def discover_sara_source_files(knowledge_dir: Path) -> list[Path]:
+    """Return SARA statute source files under knowledge/<profile>/source/.
+
+    Files are plain text sections (for example: section151, section63).
+    """
+    source_dir = knowledge_dir / "source"
+    if not source_dir.exists() or not source_dir.is_dir():
+        return []
+
+    return [path for path in sorted(source_dir.iterdir()) if path.is_file()]
+
+
 def _sha256_json(data: dict) -> str:
     blob = json.dumps(data, sort_keys=True, ensure_ascii=True).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()
@@ -129,10 +142,22 @@ def _file_snapshot(path: Path) -> dict:
     }
 
 
-def _source_snapshot(usc_path: Path, irs_sources: list[tuple[str, Path, str]]) -> list[dict]:
+def _source_snapshot(
+    usc_path: Path,
+    irs_sources: list[tuple[str, Path, str]],
+    sara_source_files: list[Path],
+) -> list[dict]:
     snapshot = [{"source": "usc26", "format": "xml", **_file_snapshot(usc_path)}]
     for source, path, fmt in irs_sources:
         snapshot.append({"source": source, "format": fmt, **_file_snapshot(path)})
+    for path in sara_source_files:
+        snapshot.append(
+            {
+                "source": "sara_source",
+                "format": "text",
+                **_file_snapshot(path),
+            }
+        )
     return snapshot
 
 
@@ -157,7 +182,10 @@ def _count_by_source(chunks: list[dict]) -> dict[str, int]:
     return {key: counter[key] for key in sorted(counter) if key}
 
 
-def _build_chunks(irs_sources: list[tuple[str, Path, str]]) -> tuple[list[dict], dict[str, int]]:
+def _build_chunks(
+    irs_sources: list[tuple[str, Path, str]],
+    sara_source_files: list[Path],
+) -> tuple[list[dict], dict[str, int]]:
     print("Parsing Title 26 XML (Subtitle A)...")
     usc_chunks = parse_usc26(cfg.USC26_XML, cfg.MAX_CHUNK_CHARS)
     print(f"  {len(usc_chunks)} statute chunks")
@@ -181,7 +209,18 @@ def _build_chunks(irs_sources: list[tuple[str, Path, str]]) -> tuple[list[dict],
 
     print(f"  {len(irs_chunks)} total IRS explanation chunks")
 
-    all_chunks = usc_chunks + irs_chunks
+    sara_chunks: list[dict] = []
+    if sara_source_files:
+        print("Parsing SARA statute source files from knowledge/source...")
+        sara_source_dir = sara_source_files[0].parent
+        sara_chunks = parse_sara_source(sara_source_dir, source="sara_source")
+        per_source_counts["sara_source"] = len(sara_chunks)
+        print(
+            "    sara_source (text): "
+            f"{len(sara_chunks)} chunks from {len(sara_source_files)} files"
+        )
+
+    all_chunks = usc_chunks + irs_chunks + sara_chunks
 
     print("Loading spaCy model and annotating cross-references...")
     nlp = load_nlp(cfg.SPACY_MODEL)
@@ -240,6 +279,7 @@ def _graph_build_and_audit(all_chunks: list[dict]) -> dict:
 def _write_manifest(
     all_chunks: list[dict],
     irs_sources: list[tuple[str, Path, str]],
+    sara_source_files: list[Path],
     per_source_counts: dict[str, int],
     cache_hits: dict[str, bool],
     source_fingerprint: str,
@@ -248,6 +288,8 @@ def _write_manifest(
     graph_fingerprint: str,
 ) -> None:
     format_counts = Counter(fmt for _, _, fmt in irs_sources)
+    if sara_source_files:
+        format_counts["text"] += len(sara_source_files)
     source_counts = _count_by_source(all_chunks)
     manifest = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -289,7 +331,9 @@ def main() -> None:
         )
 
     irs_sources = discover_irs_sources(cfg.KNOWLEDGE_DIR, cfg.EXCLUDED_SOURCES)
-    source_snapshot = _source_snapshot(cfg.USC26_XML, irs_sources)
+    sara_source_files = discover_sara_source_files(cfg.KNOWLEDGE_DIR)
+
+    source_snapshot = _source_snapshot(cfg.USC26_XML, irs_sources, sara_source_files)
     source_fingerprint = _sha256_json({"snapshot": source_snapshot})
 
     chunks_stage_fingerprint = _sha256_json(
@@ -325,7 +369,7 @@ def main() -> None:
         }
     else:
         print("Chunk stage cache miss: rebuilding chunks")
-        all_chunks, per_source_counts = _build_chunks(irs_sources)
+        all_chunks, per_source_counts = _build_chunks(irs_sources, sara_source_files)
         cfg.CHUNKS_FILE.write_text(json.dumps(all_chunks, indent=2))
         print(f"Saved chunks -> {cfg.CHUNKS_FILE}")
 
@@ -417,6 +461,7 @@ def main() -> None:
     _write_manifest(
         all_chunks=all_chunks,
         irs_sources=irs_sources,
+        sara_source_files=sara_source_files,
         per_source_counts=per_source_counts,
         cache_hits=cache_hits,
         source_fingerprint=source_fingerprint,

@@ -95,6 +95,10 @@ ollama serve
 This is a one-time step.  It parses available XML/PDF sources, builds the FAISS vector
 index, and constructs the NetworkX knowledge graph.
 
+If a profile contains `knowledge/<profile>/source/` (for example SARA statute
+files like `section151`, `section63`), those text files are also indexed as
+`sara_source` chunks and linked to canonical `26 USC` sections.
+
 By default, artifacts are profile-scoped under `data/processed/<profile>/`
 (for example `data/processed/2017/`). Set `PROFILED_OUTPUTS=0` to write to
 `data/processed/` directly.
@@ -210,7 +214,24 @@ hybrid) to measure GraphRAG's contribution.  Results are saved to
 | ---------------- | ----------- | ----- | ------- |
 | `taxbench` | `dataset/TaxBench-EvalSet.jsonl` | varies | LLM-as-judge (rubric criteria) + ROUGE-1/2/L + recall@k + MRR |
 | `irs_form_qa` | `dataset/test-tax_form_instructions_qa_pairs.parquet` | 200 | LLM-as-judge (reference answer, 0–1 scale) + ROUGE-1/2/L |
-| `sara_v3` | `dataset/sara_v3/` | split-dependent | Deterministic scoring: answer correctness + fact-grounded citation correctness + numeric step quality + ROUGE-1/2/L + recall@k + MRR |
+| `sara_v3` | `dataset/sara_v3/` | split-dependent | Deterministic scoring from case structure (`%Question` + `%Test`): label/numeric/string answer correctness + fact-grounded citation correctness + numeric step quality + ROUGE-1/2/L + recall@k + MRR |
+
+For label-style SARA cases, the preferred final format is:
+
+```text
+Final Answer: Entailment
+```
+
+`Final Answer: True` is normalized to `Entailment`, and `Final Answer: False`
+is normalized to `Contradiction` during deterministic scoring.
+
+The SARA adapter is implemented against the full dataset patterns (not single
+examples):
+
+- 276 label cases (Entailment/Contradiction style)
+- 100 numeric cases (tax amount style)
+- `%Test` helper-goal forms such as `goal :- ...` followed by `:- goal.` are
+     parsed generically, including negated helper bodies.
 
 ### Run TaxBench evaluation
 
@@ -271,6 +292,16 @@ so you can directly show the impact of adding GraphRAG context.
 # Same run with local open-source model
 SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5
 ```
+
+For local Ollama runs, timeout and retry behavior is configurable:
+
+```bash
+OLLAMA_TIMEOUT_SECONDS=240 OLLAMA_MAX_RETRIES=2 OLLAMA_RETRY_BACKOFF_SECONDS=2 \
+SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode graph --model ollama --limit 20
+```
+
+When a single case times out or errors, the run now records that case as failed
+and continues with the remaining cases instead of aborting the entire batch.
 
 Result files are written to:
 

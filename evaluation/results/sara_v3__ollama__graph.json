@@ -1,0 +1,150 @@
+{
+  "dataset": "sara_v3",
+  "model": "ollama:qwen3.5:2b",
+  "mode": "graph",
+  "n_cases": 2,
+  "cases": [
+    {
+      "id": "s151_d_1_neg",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
+      "rubric": "Contradiction",
+      "response": "### Reasoning Process\n\n1.  **Analyze the Facts**:\n    *   The provided facts state: \"Alice is entitled to an exemption under section 151(b) for the year 2015.\"\n    *   It also states: \"No other taxpayer is entitled to a deduction for Alice in 2015.\" (This sentence is irrelevant to the calculation of Alice's specific exemption amount).\n    *   The core assertion is that Alice *is* entitled to an exemption under **26 USC \u00a7151(b)**.\n\n2.  **Analyze the Question**:\n    *   The question asks: \"Alice's exemption amount under section 151(d)(1) is equal to $0?\"\n    *   This is a boolean verification task. Does the proposition \"Alice's exemption amount under section 151(d)(1) is equal to $0?\" hold true based on the facts?\n    *   If Alice is entitled to an exemption under \u00a7151(b), the specific amount for her under \u00a7151(d)(1) (which refers to an individual's share of an aggregate deduction) is typically calculated as a portion (usually 2/3 or 2/5, depending on specific year provisions not explicitly defined here) of the total exemption. It is extremely unlikely to be exactly $0 unless the total exemption is $0, which contradicts the fact that she *is* entitled to an exemption.\n\n3.  **Evaluate Logic**:\n    *   Premise 1: Alice is entitled to an exemption under \u00a7151(b).\n    *   Premise 2: The total exemption amount for the taxpayer (Alice) under \u00a7151(d)(1) is strictly less than $0 if she is entitled to a positive exemption.\n    *   Therefore, the statement \"Alice's exemption amount... is equal to $0\" is **False**.\n    *   In the label decision task instructions: \"If you reason with booleans, map True=>Entailment and False=>Contradiction.\"\n\n4.  **Determine Label**:\n    *   Since the calculated status of the proposition is False, the label is **Contradiction**.\n\n### Calculation (Verification of Numeric Logic)\n*   Let $E_{total}$ be the total exemption amount for Alice under \u00a7151(d)(1).\n*   The fact states Alice is entitled to an exemption under \u00a7151(b). Let's assume $E_{total} > 0$.\n*   The question claims $E_{total} = 0$.\n*   Since $E_{total} > 0$, the claim $E_{total} = 0$ is incorrect.\n*   This constitutes a contradiction between the fact and the assertion.\n\nFinal Answer: Contradiction",
+      "mode": "graph",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7163(b)",
+        "26 USC \u00a7163(e)",
+        "26 USC \u00a7163(f)",
+        "26 USC \u00a7163(g)",
+        "26 USC \u00a7163(h)",
+        "26 USC \u00a7163(i)",
+        "26 USC \u00a7163(k)",
+        "26 USC \u00a7163(l)",
+        "26 USC \u00a7163(m)",
+        "26 USC \u00a7170(f)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.0,
+        "mrr": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 9,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0057,
+        "rouge2": 0.0,
+        "rougeL": 0.0057
+      }
+    },
+    {
+      "id": "s151_d_1_pos",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
+      "rubric": "Entailment",
+      "response": "To determine if Alice's exemption amount under section 151(d)(1) is equal to $2000, we must evaluate the provided facts against the legal structure of the SARA (Safe Harbor Allocation and Relief Act) code for 2015.\n\n**1. Analyze the Provided Facts:**\n*   The facts state: \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\"\n*   The facts state: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n\n**2. Analyze the Legal Structure (26 USC \u00a7151(d)):**\nAccording to 26 U.S.C. \u00a7151(d), the exemption amount for a taxpayer is generally calculated as:\n$$ \\text{Exemption} = \\frac{\\text{Base Taxable Income} \\times \\text{Exemption Rate}}{1 + \\text{Number of Exempts}} $$\n\nFor the purpose of SARA in 2015 (which applied to tax years ending December 31, 2015):\n*   **Base Taxable Income:** $20,000.\n*   **Exemption Rate:** 10%.\n*   **Number of Exempts:** 1 (Alice).\n\n**3. Perform the Calculation:**\n*   **Step 1:** Calculate the numerator (Base Income $\\times$ Rate).\n    $$ \\$20,000 \\times 10\\% = \\$2,000 $$\n*   **Step 2:** Divide by (1 + Number of Exempts).\n    $$ \\frac{\\$2,000}{1 + 1} = \\frac{\\$2,000}{2} = \\$1,000 $$\n\n**4. Evaluate the Claim:**\n*   **Claim:** Alice's exemption amount is equal to $2000.\n*   **Calculation Result:** The calculated amount is $1,000.\n*   **Comparison:** $1,000 \\neq \\$2000$.\n\n**Conclusion:**\nBased on the standard SARA exemption calculation rules for 2015 (as implied by the context of the question asking to verify a specific dollar amount), Alice's exemption is calculated at $1,000, not $2,000. Therefore, the statement that her exemption is equal to $2000 is false.\n\nFinal Answer: Contradiction",
+      "mode": "graph",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7163(b)",
+        "26 USC \u00a7163(e)",
+        "26 USC \u00a7163(f)",
+        "26 USC \u00a7163(g)",
+        "26 USC \u00a7163(h)",
+        "26 USC \u00a7163(i)",
+        "26 USC \u00a7163(k)",
+        "26 USC \u00a7163(l)",
+        "26 USC \u00a7163(m)",
+        "26 USC \u00a7170(f)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.0,
+        "mrr": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 3,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 4,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.1667,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=contradiction; answer_correct=False; citation_precision=0.67",
+        "predicted_label": "contradiction",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 0.6667,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 3,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0,
+        "rouge2": 0.0,
+        "rougeL": 0.0
+      }
+    }
+  ]
+}

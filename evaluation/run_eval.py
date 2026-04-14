@@ -28,7 +28,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import socket
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 from urllib import error as urlerror
@@ -182,23 +184,57 @@ def build_system_prompt(chunks: list[dict]) -> str:
 
 def _build_sara_user_prompt(case: EvalCase) -> str:
     """Build SARA case prompt with explicit facts and citation constraints."""
-    facts = str(case.metadata.get("context", "")).strip()
+    text_context = str(case.metadata.get("context", "")).strip()
+    structured_facts = str(case.metadata.get("facts", "")).strip()
+    expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
     allowed_refs = case.relevant_ids or []
     allowed_text = ", ".join(allowed_refs) if allowed_refs else "None"
 
+    instructions = [
+        "1) Use facts for taxpayer details and values.",
+        "2) Cite only allowed section citations.",
+    ]
+    if expected_type == "numeric":
+        instructions.append("3) Show arithmetic steps for numeric answers.")
+        instructions.append("4) End with: Final Answer: <numeric-value>.")
+    elif expected_type == "label":
+        instructions.append(
+            "3) This is a label decision task; Final Answer must be exactly Entailment, Contradiction, or Unknown."
+        )
+        instructions.append("4) If you reason with booleans, map True=>Entailment and False=>Contradiction.")
+    else:
+        instructions.append("3) End with: Final Answer: <value-or-label>.")
+
+    instruction_text = "\n".join(instructions)
+
     return (
-        "SARA Case Facts:\n"
-        f"{facts or '(no facts provided)'}\n\n"
+        "SARA Case Text (%Text):\n"
+        f"{text_context or '(no text context provided)'}\n\n"
+        "SARA Structured Facts (%Facts):\n"
+        f"{structured_facts or '(no structured facts provided)'}\n\n"
         "Question:\n"
         f"{case.question}\n\n"
         "Allowed section citations (must come from facts/question):\n"
         f"{allowed_text}\n\n"
         "Instructions:\n"
-        "1) Use facts for taxpayer details and values.\n"
-        "2) Show arithmetic steps for numeric answers.\n"
-        "3) Cite only allowed section citations.\n"
-        "4) End with: Final Answer: <value-or-label>."
+        f"{instruction_text}"
     )
+
+
+def _build_sara_system_append(case: EvalCase) -> str:
+    expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
+    if expected_type == "label":
+        return (
+            f"{_SARA_SYSTEM_APPEND}\n"
+            "- For label tasks, the final answer must be exactly one of: Entailment, Contradiction, Unknown.\n"
+            "- Do not output a numeric value for label tasks."
+        )
+    if expected_type == "numeric":
+        return (
+            f"{_SARA_SYSTEM_APPEND}\n"
+            "- For numeric tasks, include arithmetic steps and a numeric Final Answer."
+        )
+    return _SARA_SYSTEM_APPEND
 
 
 def call_llm(system: str, question: str, model_id: str) -> str:
@@ -255,38 +291,78 @@ def _call_ollama(system: str, question: str, model_id: str) -> str:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urlrequest.urlopen(req, timeout=cfg.OLLAMA_TIMEOUT_SECONDS) as resp:
-            raw = resp.read().decode("utf-8")
-    except urlerror.HTTPError as exc:
-        detail = ""
-        try:
-            detail = exc.read().decode("utf-8")
-        except Exception:
-            detail = ""
 
-        if exc.code == 404:
+    retries = max(1, int(cfg.OLLAMA_MAX_RETRIES))
+    backoff = max(0, int(cfg.OLLAMA_RETRY_BACKOFF_SECONDS))
+
+    for attempt in range(1, retries + 1):
+        try:
+            with urlrequest.urlopen(req, timeout=cfg.OLLAMA_TIMEOUT_SECONDS) as resp:
+                raw = resp.read().decode("utf-8")
+
+            data = json.loads(raw)
+            message = data.get("message", {})
+            content = str(message.get("content", "")).strip()
+            if not content:
+                raise RuntimeError(f"Ollama returned empty response: {raw[:200]}")
+            return content
+
+        except urlerror.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read().decode("utf-8")
+            except Exception:
+                detail = ""
+
+            if exc.code == 404:
+                raise RuntimeError(
+                    f"Ollama model '{model_name}' was not found. "
+                    f"Run: ollama pull {model_name}."
+                ) from exc
+
             raise RuntimeError(
-                f"Ollama model '{model_name}' was not found. "
-                f"Run: ollama pull {model_name}."
+                f"Ollama HTTP error {exc.code}. "
+                f"Endpoint={cfg.OLLAMA_BASE_URL}. Details={detail[:200]}"
             ) from exc
 
-        raise RuntimeError(
-            f"Ollama HTTP error {exc.code}. "
-            f"Endpoint={cfg.OLLAMA_BASE_URL}. Details={detail[:200]}"
-        ) from exc
-    except urlerror.URLError as exc:
-        raise RuntimeError(
-            "Failed to reach Ollama server. "
-            f"Check OLLAMA_BASE_URL ({cfg.OLLAMA_BASE_URL}) and run 'ollama serve'."
-        ) from exc
+        except (TimeoutError, socket.timeout) as exc:
+            if attempt < retries:
+                print(
+                    f"    Ollama timeout (attempt {attempt}/{retries}); retrying in {backoff}s..."
+                )
+                if backoff > 0:
+                    time.sleep(backoff)
+                continue
+            raise RuntimeError(
+                "Ollama request timed out. "
+                f"Model={model_name}, timeout={cfg.OLLAMA_TIMEOUT_SECONDS}s, retries={retries}. "
+                "Try increasing OLLAMA_TIMEOUT_SECONDS, reducing --limit, or using a smaller model."
+            ) from exc
 
-    data = json.loads(raw)
-    message = data.get("message", {})
-    content = str(message.get("content", "")).strip()
-    if not content:
-        raise RuntimeError(f"Ollama returned empty response: {raw[:200]}")
-    return content
+        except urlerror.URLError as exc:
+            reason = getattr(exc, "reason", None)
+            is_timeout = isinstance(reason, (TimeoutError, socket.timeout))
+            if is_timeout and attempt < retries:
+                print(
+                    f"    Ollama timeout (attempt {attempt}/{retries}); retrying in {backoff}s..."
+                )
+                if backoff > 0:
+                    time.sleep(backoff)
+                continue
+
+            if is_timeout:
+                raise RuntimeError(
+                    "Ollama request timed out. "
+                    f"Model={model_name}, timeout={cfg.OLLAMA_TIMEOUT_SECONDS}s, retries={retries}. "
+                    "Try increasing OLLAMA_TIMEOUT_SECONDS, reducing --limit, or using a smaller model."
+                ) from exc
+
+            raise RuntimeError(
+                "Failed to reach Ollama server. "
+                f"Check OLLAMA_BASE_URL ({cfg.OLLAMA_BASE_URL}) and run 'ollama serve'."
+            ) from exc
+
+    raise RuntimeError("Ollama request failed unexpectedly.")
 
 
 # ---------------------------------------------------------------------------
@@ -453,7 +529,7 @@ def run_case(
         system = build_system_prompt(chunks)
         user_prompt = _build_sara_user_prompt(case) if is_sara else case.question
         if is_sara:
-            system = f"{system}{_SARA_SYSTEM_APPEND}"
+            system = f"{system}{_build_sara_system_append(case)}"
         response = call_llm(system, user_prompt, model_id)
 
     # Score via the dataset's own score() method.
@@ -793,16 +869,38 @@ def main() -> None:
         results = []
         for i, case in enumerate(cases, 1):
             print(f"  [{i}/{len(cases)}] {case.id[:40]}")
-            result = run_case(
-                case=case,
-                dataset=dataset,
-                retriever=retriever,
-                model_id=model_id,
-                mode=mode,
-                dry_run=args.dry_run,
-                judge_model_id=judge_id,
-                skip_scoring=args.skip_scoring,
-            )
+            try:
+                result = run_case(
+                    case=case,
+                    dataset=dataset,
+                    retriever=retriever,
+                    model_id=model_id,
+                    mode=mode,
+                    dry_run=args.dry_run,
+                    judge_model_id=judge_id,
+                    skip_scoring=args.skip_scoring,
+                )
+            except Exception as exc:
+                print(f"    ERROR: {exc}")
+                result = {
+                    "id": case.id,
+                    "question": case.question,
+                    "rubric": case.rubric,
+                    "response": "",
+                    "mode": mode,
+                    "model": model_id,
+                    "retrieved_ids": [],
+                    "n_chunks": 0,
+                    "retrieval_metrics": {},
+                    "citation_metrics": {},
+                    "scoring": {
+                        "earned": None,
+                        "total": None,
+                        "feedback": f"Case failed: {exc}",
+                        "_case_error": True,
+                    },
+                    "error": str(exc),
+                }
             results.append(result)
 
         # Summary stats

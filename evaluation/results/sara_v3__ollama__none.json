@@ -1,0 +1,112 @@
+{
+  "dataset": "sara_v3",
+  "model": "ollama:qwen3.5:2b",
+  "mode": "none",
+  "n_cases": 2,
+  "cases": [
+    {
+      "id": "s151_d_1_neg",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
+      "rubric": "Contradiction",
+      "response": "Based on the provided text and facts:\n\n1.  **Facts Analysis**: The text explicitly states: \"Alice is entitled to an exemption under section 151(b) for the year 2015.\"\n2.  **Question Analysis**: The question asks if Alice's exemption amount under section 151(d)(1) is equal to $0.\n3.  **Logical Deduction**:\n    *   The text confirms an exemption exists under Section 151(b).\n    *   However, it does not specify the *amount* or *basis* of that exemption, nor does it mention a separate deduction under Section 151(d)(1) or its amount for this specific taxpayer in this context.\n    *   Crucially, the text does not provide specific dollar amounts for the exemption amounts. Without explicit numerical information in the text, one cannot determine if the amount is $0 based solely on the provided facts. The existence of a deduction or exemption does not automatically mean the amount is $0, nor does it preclude it being $0.\n    *   Since the provided facts do not contain the necessary information (the specific dollar amount) to verify if the amount is $0, the relationship between the premise (Alice has an exemption) and the hypothesis (the amount is exactly $0) cannot be definitively determined from the text alone. The text is consistent with both possibilities, but does not entail one over the other.\n\nTherefore, the answer is Unknown.\n\nUnknown",
+      "mode": "none",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [],
+      "n_chunks": 0,
+      "retrieval_metrics": {},
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 4,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.25,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=unknown; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "unknown",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0,
+        "rouge2": 0.0,
+        "rougeL": 0.0
+      }
+    },
+    {
+      "id": "s151_d_1_pos",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
+      "rubric": "Entailment",
+      "response": "### Reasoning\n\n1.  **Analyze the Provided Fact**:\n    The input text states: \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\"\n    This confirms that Alice qualifies for an exclusion based on **Section 151(b)**.\n\n2.  **Analyze the Question**:\n    The question asks if Alice's exemption amount under **Section 151(d)(1)** is equal to $2000.\n\n3.  **Evaluate the Relationship**:\n    *   Section 151(b) defines a \"business deduction\" exclusion (an exclusion of business expenses from gross income), specifically allowing a taxpayer to deduct certain business expenses.\n    *   Section 151(d)(1) typically governs the amount of the exclusion for \"business expenses\" generally under the tax code provisions often cited alongside 151(b) (specifically, it often limits the amount of the deduction for \"business expenses\" relative to the deduction limits in 151(d) or (d)(1) in the context of business loss deductions).\n    *   However, in the specific context of the provided text, we are only told Alice is entitled to an exclusion under **151(b)**.\n    *   The provided text does not contain any information about the *amount* of the exclusion, nor does it mention **Section 151(d)(1)** in the context of the value of Alice's specific deduction.\n    *   The provided text explicitly states that \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    *   Crucially, the text **does not assert** the value is $2000. It only asserts the *existence* of the entitlement under 151(b). The specific dollar amount for the deduction is not provided in the facts.\n    *   Without the specific dollar amount in the facts, we cannot mathematically prove or disprove whether the amount is $2000 based solely on the provided text. Therefore, based *only* on the provided facts and restricted citation list, the truth of the claim \"the amount is $2000\" cannot be determined from the text.\n\n4.  **Determine the Label**:\n    Since the text fails to provide the specific monetary value of the deduction required to verify the claim, the relationship between the facts and the proposition is Unknown.\n\nFinal Answer: Unknown",
+      "mode": "none",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [],
+      "n_chunks": 0,
+      "retrieval_metrics": {},
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 5,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.25,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=unknown; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "unknown",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "citation_correct": true,
+        "rouge1": 0.0,
+        "rouge2": 0.0,
+        "rougeL": 0.0
+      }
+    }
+  ]
+}

@@ -18,8 +18,19 @@ from src.preprocessing.normalizer import extract_usc_refs
 
 _LABEL_RE = re.compile(r"\b(entailment|contradiction|unknown)\b", re.IGNORECASE)
 _NUMBER_RE = re.compile(r"-?\$?\s*([0-9][0-9,]*(?:\.[0-9]+)?)")
+_GOAL_NUMBER_RE = re.compile(r"(?<![A-Za-z_])-?[0-9]+(?:\.[0-9]+)?")
 _CALC_MARKER_RE = re.compile(
     r"(?:step\s*\d+|=|\+|\-|\*|/|minus|plus|times|divide|therefore|final answer)",
+    re.IGNORECASE,
+)
+_FINAL_ANSWER_RE = re.compile(r"final\s+answer\s*:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
+_LABEL_ENTAILMENT_RE = re.compile(r"\b(entailment|entailed|entails)\b", re.IGNORECASE)
+_LABEL_CONTRADICTION_RE = re.compile(
+    r"\b(contradiction|contradictory|contradicts|contradict)\b",
+    re.IGNORECASE,
+)
+_LABEL_UNKNOWN_RE = re.compile(
+    r"\b(unknown|indeterminate|cannot determine|insufficient information)\b",
     re.IGNORECASE,
 )
 
@@ -36,7 +47,208 @@ def _extract_first_number(text: str) -> str | None:
 
 
 def _extract_all_numbers(text: str) -> list[str]:
-    return [_clean_money(token) for token in _NUMBER_RE.findall(text)]
+    numbers: list[str] = []
+    for match in _NUMBER_RE.finditer(text or ""):
+        start = match.start()
+        lookback = (text[max(0, start - 16) : start]).lower()
+        if "§" in lookback or lookback.rstrip().endswith("section"):
+            continue
+        numbers.append(_clean_money(match.group(1)))
+    return numbers
+
+
+def _extract_goal_numbers(goal_text: str) -> list[str]:
+    return [_clean_money(token) for token in _GOAL_NUMBER_RE.findall(goal_text or "")]
+
+
+def _is_likely_numeric_question(question_raw: str) -> bool:
+    q = (question_raw or "").lower().strip()
+    if not q:
+        return False
+    if "how much" in q:
+        return True
+    if "$" in q:
+        return True
+    if "tax" in q and "?" in q:
+        return True
+    if "amount" in q and "?" in q:
+        return True
+    return False
+
+
+def _extract_final_answer(response: str) -> str | None:
+    match = _FINAL_ANSWER_RE.search(response or "")
+    if not match:
+        return None
+    answer = match.group(1).strip()
+    if not answer:
+        return None
+    return answer.splitlines()[0].strip()
+
+
+def _normalize_string(text: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", text.lower())).strip()
+
+
+def _canonical_label_from_text(text: str, allow_boolean: bool = False) -> str | None:
+    normalized = _normalize_string(text or "")
+    if not normalized:
+        return None
+
+    if _LABEL_UNKNOWN_RE.search(normalized):
+        return "unknown"
+    if re.search(r"\b(not entailment|not entailed|does not entail)\b", normalized):
+        return "contradiction"
+    if re.search(r"\b(not contradiction|not contradictory)\b", normalized):
+        return "entailment"
+    if _LABEL_CONTRADICTION_RE.search(normalized):
+        return "contradiction"
+    if _LABEL_ENTAILMENT_RE.search(normalized):
+        return "entailment"
+
+    if allow_boolean:
+        bool_candidate = normalized.strip()
+        if bool_candidate in {"true", "yes"}:
+            return "entailment"
+        if bool_candidate in {"false", "no"}:
+            return "contradiction"
+        if bool_candidate.startswith("true ") or bool_candidate.startswith("yes "):
+            return "entailment"
+        if bool_candidate.startswith("false ") or bool_candidate.startswith("no "):
+            return "contradiction"
+
+    return None
+
+
+def _extract_predicted_label(response: str) -> str | None:
+    final_answer = _extract_final_answer(response or "")
+    if final_answer:
+        predicted = _canonical_label_from_text(final_answer, allow_boolean=True)
+        if predicted:
+            return predicted
+
+    return _canonical_label_from_text(response or "", allow_boolean=False)
+
+
+def _label_from_test_goal(case: EvalCase) -> str | None:
+    test_goal = str(case.metadata.get("test_goal", "")).strip()
+    if not test_goal:
+        return None
+
+    if bool(case.metadata.get("test_goal_negated")):
+        return "contradiction"
+    return "entailment"
+
+
+def _label_from_case_stem(case_stem: str) -> str | None:
+    if case_stem.endswith("_pos"):
+        return "Entailment"
+    if case_stem.endswith("_neg"):
+        return "Contradiction"
+    return None
+
+
+def _split_prolog_clauses(lines: list[str]) -> list[str]:
+    """Split Prolog lines into complete clauses ending in a period."""
+    clauses: list[str] = []
+    buffer: list[str] = []
+
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            continue
+
+        buffer.append(line)
+        if line.endswith("."):
+            clauses.append(" ".join(buffer))
+            buffer = []
+
+    if buffer:
+        clauses.append(" ".join(buffer))
+
+    return clauses
+
+
+def _predicate_signature(term: str) -> tuple[str, int] | None:
+    term = term.strip()
+    if not term:
+        return None
+
+    match = re.fullmatch(r"([a-zA-Z_][a-zA-Z0-9_]*)(?:\((.*)\))?", term)
+    if not match:
+        return None
+
+    name = match.group(1)
+    args = (match.group(2) or "").strip()
+    if not args:
+        return (name, 0)
+
+    depth = 0
+    arity = 1
+    for ch in args:
+        if ch == "(":
+            depth += 1
+        elif ch == ")" and depth > 0:
+            depth -= 1
+        elif ch == "," and depth == 0:
+            arity += 1
+
+    return (name, arity)
+
+
+def _parse_test_goals(test_lines: list[str]) -> dict:
+    """Parse %Test clauses and infer asserted goal and effective negation."""
+    clauses = _split_prolog_clauses(test_lines)
+    if not clauses:
+        return {
+            "test_goal": "",
+            "test_goal_negated": False,
+            "test_goal_numbers": [],
+        }
+
+    definitions: dict[tuple[str, int], str] = {}
+    queries: list[str] = []
+
+    for clause in clauses:
+        content = clause[:-1].strip() if clause.endswith(".") else clause.strip()
+        if not content:
+            continue
+
+        if content.startswith(":-"):
+            query_expr = content[2:].strip()
+            if query_expr.lower() == "halt":
+                continue
+            queries.append(query_expr)
+            continue
+
+        if ":-" in content:
+            head, body = content.split(":-", 1)
+            signature = _predicate_signature(head.strip())
+            if signature:
+                definitions[signature] = body.strip()
+
+    if not queries:
+        return {
+            "test_goal": "",
+            "test_goal_negated": False,
+            "test_goal_numbers": [],
+        }
+
+    primary_query = queries[0]
+    query_negated = primary_query.startswith("\\+")
+    query_term = primary_query[2:].strip() if query_negated else primary_query
+
+    signature = _predicate_signature(query_term)
+    if signature and signature in definitions:
+        resolved_body = definitions[signature]
+        if resolved_body.startswith("\\+"):
+            query_negated = True
+
+    return {
+        "test_goal": query_term,
+        "test_goal_negated": query_negated,
+        "test_goal_numbers": _extract_goal_numbers(query_term),
+    }
 
 
 def _citation_metrics_for_case(response: str, case: EvalCase) -> dict:
@@ -68,15 +280,17 @@ def _citation_metrics_for_case(response: str, case: EvalCase) -> dict:
     }
 
 
-def _parse_case_file(path: Path) -> tuple[str, str, str, str]:
+def _parse_case_file(path: Path) -> dict:
     """Parse one SARA case file.
 
     Returns:
-      context_text, question, expected_answer, expected_type
-    expected_type is one of: label, numeric, freeform.
+      Dict with context/facts/question/expected answer fields.
+    expected_type is one of: label, numeric, string, freeform.
     """
     text_lines: list[str] = []
     question_lines: list[str] = []
+    facts_lines: list[str] = []
+    test_lines: list[str] = []
     section: str | None = None
 
     for raw in path.read_text(encoding="utf-8").splitlines():
@@ -87,27 +301,45 @@ def _parse_case_file(path: Path) -> tuple[str, str, str, str]:
         if line.startswith("% Question"):
             section = "question"
             continue
-        if line.startswith("% Facts") or line.startswith("% Test"):
-            section = None
+        if line.startswith("% Facts"):
+            section = "facts"
             continue
-        if not line.startswith("%"):
-            continue
-
-        content = line[1:].strip()
-        if not content:
+        if line.startswith("% Test"):
+            section = "test"
             continue
 
-        if section == "text":
-            text_lines.append(content)
-        elif section == "question":
-            question_lines.append(content)
+        if section in {"text", "question"}:
+            if not line.startswith("%"):
+                continue
+            content = line[1:].strip()
+            if not content:
+                continue
+            if section == "text":
+                text_lines.append(content)
+            else:
+                question_lines.append(content)
+            continue
+
+        if section == "facts":
+            content = line.strip()
+            if content:
+                facts_lines.append(content)
+            continue
+
+        if section == "test":
+            content = line.strip()
+            if content:
+                test_lines.append(content)
 
     context_text = " ".join(text_lines).strip()
+    facts_text = "\n".join(facts_lines).strip()
     question_raw = " ".join(question_lines).strip()
 
     expected = ""
     expected_type = "freeform"
     question = question_raw
+    label_from_stem = _label_from_case_stem(path.stem)
+    label_from_question: str | None = None
 
     if "?" in question_raw:
         before, after = question_raw.rsplit("?", 1)
@@ -116,29 +348,66 @@ def _parse_case_file(path: Path) -> tuple[str, str, str, str]:
         if candidate:
             expected = candidate
 
-    if not expected:
-        label_match = _LABEL_RE.search(question_raw)
-        if label_match:
-            expected = label_match.group(1).capitalize()
-            question = question_raw[: label_match.start()].strip().rstrip(".")
-            if question and not question.endswith("?"):
-                question += "?"
+    label_match = _LABEL_RE.search(question_raw)
+    if label_match:
+        label_from_question = label_match.group(1).capitalize()
+        if not expected:
+            expected = label_from_question
+        question = question_raw[: label_match.start()].strip().rstrip(".")
+        if question and not question.endswith("?"):
+            question += "?"
+
+    test_goal_info = _parse_test_goals(test_lines)
+    primary_test_goal = test_goal_info["test_goal"]
+    primary_test_goal_negated = bool(test_goal_info["test_goal_negated"])
+    primary_test_goal_numbers = list(test_goal_info["test_goal_numbers"])
+
+    expected_number = _extract_first_number(expected or "")
+    test_number = primary_test_goal_numbers[-1] if primary_test_goal_numbers else None
+
+    # Use %Test numeric answer as ground truth when question extraction is
+    # missing or inconsistent.
+    if test_number and (
+        (expected_number is not None and expected_number != test_number)
+        or (not expected and _is_likely_numeric_question(question_raw))
+    ):
+        expected = test_number
 
     if not expected:
-        if path.stem.endswith("_pos"):
-            expected = "Entailment"
-        elif path.stem.endswith("_neg"):
-            expected = "Contradiction"
+        is_interrogative = "?" in question_raw
+
+        if label_from_question:
+            expected = label_from_question
+        elif not is_interrogative and (label_from_stem or primary_test_goal):
+            if primary_test_goal_negated:
+                expected = "Contradiction"
+            else:
+                expected = label_from_stem or "Entailment"
+        elif primary_test_goal_numbers:
+            expected = primary_test_goal_numbers[-1]
+        elif label_from_stem:
+            expected = label_from_stem
 
     if _LABEL_RE.fullmatch(expected.strip()):
         expected_type = "label"
     elif _extract_first_number(expected or "") is not None:
         expected_type = "numeric"
+    elif expected:
+        expected_type = "string"
 
     if not question:
         question = question_raw
 
-    return context_text, question, expected, expected_type
+    return {
+        "context_text": context_text,
+        "facts_text": facts_text,
+        "question": question,
+        "expected": expected,
+        "expected_type": expected_type,
+        "test_goal": primary_test_goal,
+        "test_goal_negated": primary_test_goal_negated,
+        "test_goal_numbers": primary_test_goal_numbers,
+    }
 
 
 def _compute_rouge(prediction: str, reference: str) -> dict:
@@ -187,8 +456,14 @@ class SARAV3Dataset(Dataset):
             if not case_path.exists():
                 continue
 
-            context_text, question, expected, expected_type = _parse_case_file(case_path)
-            relevant_ids = extract_usc_refs(f"{context_text}\n{question}")
+            parsed = _parse_case_file(case_path)
+            context_text = parsed["context_text"]
+            facts_text = parsed["facts_text"]
+            question = parsed["question"]
+            expected = parsed["expected"]
+            expected_type = parsed["expected_type"]
+
+            relevant_ids = extract_usc_refs(f"{context_text}\n{facts_text}\n{question}")
 
             cases.append(
                 EvalCase(
@@ -198,8 +473,12 @@ class SARAV3Dataset(Dataset):
                     relevant_ids=relevant_ids,
                     metadata={
                         "context": context_text,
+                        "facts": facts_text,
                         "source_file": case_path.name,
                         "expected_type": expected_type,
+                        "test_goal": parsed["test_goal"],
+                        "test_goal_negated": parsed["test_goal_negated"],
+                        "test_goal_numbers": parsed["test_goal_numbers"],
                         "split": split,
                     },
                 )
@@ -224,6 +503,7 @@ class SARAV3Dataset(Dataset):
         expected = (case.rubric or "").strip()
         expected_type = str(case.metadata.get("expected_type", "freeform"))
         citation = _citation_metrics_for_case(response or "", case)
+        final_answer = _extract_final_answer(response or "")
 
         answer_correct = 0.0
         calc_steps_present = None
@@ -236,8 +516,12 @@ class SARAV3Dataset(Dataset):
             }
         elif expected_type == "label":
             expected_label = expected.lower()
-            response_label_match = _LABEL_RE.search(response or "")
-            answer_correct = 1.0 if response_label_match and response_label_match.group(1).lower() == expected_label else 0.0
+            predicted_label = _extract_predicted_label(response or "")
+            answer_correct = 1.0 if predicted_label == expected_label else 0.0
+            test_goal_label = _label_from_test_goal(case)
+            expected_label_consistent_with_test = None
+            if test_goal_label is not None:
+                expected_label_consistent_with_test = expected_label == test_goal_label
 
             # Label cases: prioritize correct legal conclusion, then citation grounding.
             earned = round(0.75 * answer_correct + 0.25 * citation["citation_fact_precision"], 4)
@@ -246,17 +530,23 @@ class SARAV3Dataset(Dataset):
                 "total": 1.0,
                 "feedback": (
                     f"Expected {expected}; "
+                    f"predicted_label={predicted_label or 'none'}; "
                     f"answer_correct={bool(answer_correct)}; "
                     f"citation_precision={citation['citation_fact_precision']:.2f}"
                 ),
+                "predicted_label": predicted_label,
+                "test_goal_label": test_goal_label,
+                "expected_label_consistent_with_test": expected_label_consistent_with_test,
             }
         elif expected_type == "numeric":
             expected_num = _extract_first_number(expected)
-            response_numbers = _extract_all_numbers(response or "")
+            number_source = final_answer if final_answer else (response or "")
+            response_numbers = _extract_all_numbers(number_source)
             answer_correct = 1.0 if expected_num and expected_num in response_numbers else 0.0
 
             calc_steps_present = bool(
-                len(response_numbers) >= 2 and _CALC_MARKER_RE.search(response or "")
+                len(_extract_all_numbers(response or "")) >= 2
+                and _CALC_MARKER_RE.search(response or "")
             )
             calc_score = 1.0 if calc_steps_present else 0.0
 
@@ -274,6 +564,21 @@ class SARAV3Dataset(Dataset):
                     f"Expected numeric {expected_num}; "
                     f"answer_correct={bool(answer_correct)}; "
                     f"calc_steps_present={bool(calc_steps_present)}; "
+                    f"citation_precision={citation['citation_fact_precision']:.2f}"
+                ),
+            }
+        elif expected_type == "string":
+            expected_norm = _normalize_string(expected)
+            response_norm = _normalize_string(final_answer or (response or ""))
+            answer_correct = 1.0 if expected_norm and expected_norm in response_norm else 0.0
+
+            earned = round(0.75 * answer_correct + 0.25 * citation["citation_fact_precision"], 4)
+            judge_result = {
+                "earned": earned,
+                "total": 1.0,
+                "feedback": (
+                    f"Expected '{expected}'; "
+                    f"answer_correct={bool(answer_correct)}; "
                     f"citation_precision={citation['citation_fact_precision']:.2f}"
                 ),
             }
