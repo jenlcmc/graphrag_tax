@@ -1,0 +1,64 @@
+{
+  "dataset": "sara_v3",
+  "model": "ollama:qwen3.5:2b",
+  "mode": "hybrid",
+  "n_cases": 1,
+  "cases": [
+    {
+      "id": "s151_d_1_neg",
+      "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
+      "rubric": "Contradiction",
+      "response": "No, Alice's exemption amount under **Section 151(d)(1)** of the Code is **not** equal to $0.\n\nUnder **Section 151(d)(1)** (which was repealed and renumbered, currently found in **Section 151(e)(1)**), the exemption applies if a foreign national or nonresident alien individual (or certain other persons) is a **resident of the United States** but not a citizen of the United States (a \"nonresident alien\" as defined in **Section 7701(a)(30)** of the Internal Revenue Code).\n\nThe statutory text states that such an individual shall be entitled to a deduction or credit of the amount of the tax imposed on him as a resident of the United States (or of the other taxing authority). Specifically, under **26 USC \u00a774(b)** (for income tax) and **26 USC \u00a76771(d)** (for estate/income tax), a \"nonresident alien resident\" is eligible for this exemption **if**:\n1.  He or she is a resident of the U.S. (e.g., has domicile in the U.S. for more than 183 days in a calendar year, or a valid DSR or HSR status);\n2.  The individual is **not** a U.S. citizen; and\n3.  The individual is an **insignificant foreign individual** (or, if the individual is a corporation, an insignificant foreign corporation).\n\nIf Alice's status falls within these specific criteria, she is entitled to the exemption. However, the exemption is a percentage of her taxable income (or net income), not a fixed dollar amount.\n\n### Calculation Example\nTo determine the specific amount (if she qualifies), you would apply the percentage rate to her taxable income.\n\n**Scenario:**\n*   **Taxable Income:** $100,000\n*   **Applicable Percentage:** 20% (The rate for \"insignificant\" foreign individuals under \u00a76771(d)(2) and \u00a774(b)(3))\n\n**Calculation:**\n$$ \\text{Exemption} = \\text{Taxable Income} \\times \\text{Percentage Rate} $$\n$$ \\text{Exemption} = \\$100,000 \\times 0.20 $$\n$$ \\text{Exemption} = \\$20,000 $$\n\n**Conclusion:**\nIf Alice qualifies as a nonresident alien resident, her exemption is calculated based on her tax rate (20% for insignificant foreign individuals), which results in **$20,000**. She is not entitled to $0.",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a71017(b)",
+        "26 USC \u00a7105(a)",
+        "26 USC \u00a7105(c)",
+        "26 USC \u00a7105(f)",
+        "26 USC \u00a7105(h)",
+        "26 USC \u00a71271(c)",
+        "26 USC \u00a71273(c)",
+        "26 USC \u00a71274(c)",
+        "26 USC \u00a71281(b)",
+        "26 USC \u00a71341(a)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.0,
+        "mrr": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 7,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 4,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(e)(1)",
+          "26 USC \u00a76771(d)",
+          "26 USC \u00a76771(d)(2)",
+          "26 USC \u00a774(b)",
+          "26 USC \u00a774(b)(3)",
+          "26 USC \u00a77701(a)(30)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.0,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; matched=False",
+        "rouge1": 0.0,
+        "rouge2": 0.0,
+        "rougeL": 0.0
+      }
+    }
+  ]
+}
