@@ -1,0 +1,24 @@
+# Core pipeline — no API key needed
+# Pinned for compatibility with Intel Mac (x86_64) and Apple Silicon
+# torch 2.2.2 is the latest available on Intel Mac; numpy must be <2 for torch 2.x
+
+lxml>=6.0
+spacy>=3.8
+numpy==1.26.4
+torch==2.2.2
+transformers==4.44.2
+sentence-transformers==3.3.1
+faiss-cpu>=1.7
+networkx>=3.6
+python-dotenv>=1.2
+pypdf>=4.2
+
+# LLM API clients — needed for chatbot.py and evaluation/run_eval.py
+anthropic>=0.34
+google-genai
+
+# Evaluation metrics and parquet support
+rouge-score>=0.1.2
+pandas>=2.0
+pyarrow>=14.0
+pytest>=8.0
