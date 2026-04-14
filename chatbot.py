@@ -218,6 +218,23 @@ class TaxChatbot:
         try:
             with urlrequest.urlopen(req, timeout=cfg.OLLAMA_TIMEOUT_SECONDS) as resp:
                 raw = resp.read().decode("utf-8")
+        except urlerror.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read().decode("utf-8")
+            except Exception:
+                detail = ""
+
+            if exc.code == 404:
+                raise RuntimeError(
+                    f"Ollama model '{self.model}' was not found. "
+                    f"Run: ollama pull {self.model}."
+                ) from exc
+
+            raise RuntimeError(
+                f"Ollama HTTP error {exc.code}. "
+                f"Endpoint={cfg.OLLAMA_BASE_URL}. Details={detail[:200]}"
+            ) from exc
         except urlerror.URLError as exc:
             raise RuntimeError(
                 "Failed to reach Ollama server. "

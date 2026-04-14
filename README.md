@@ -210,7 +210,7 @@ hybrid) to measure GraphRAG's contribution.  Results are saved to
 | ---------------- | ----------- | ----- | ------- |
 | `taxbench` | `dataset/TaxBench-EvalSet.jsonl` | varies | LLM-as-judge (rubric criteria) + ROUGE-1/2/L + recall@k + MRR |
 | `irs_form_qa` | `dataset/test-tax_form_instructions_qa_pairs.parquet` | 200 | LLM-as-judge (reference answer, 0–1 scale) + ROUGE-1/2/L |
-| `sara_v3` | `dataset/sara_v3/` | split-dependent | Deterministic scoring for numeric/entailment cases + ROUGE-1/2/L + recall@k + MRR + citation metrics |
+| `sara_v3` | `dataset/sara_v3/` | split-dependent | Deterministic scoring: answer correctness + fact-grounded citation correctness + numeric step quality + ROUGE-1/2/L + recall@k + MRR |
 
 ### Run TaxBench evaluation
 
@@ -259,9 +259,15 @@ python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
 # Choose split via environment variable
 SARA_SPLIT=train python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
 
-# Use retrieval modes once indexes are available
+# Use retrieval modes once indexes are available (judge not required for SARA)
 SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model gemini --limit 5
 
+# Compare LLM-only vs GraphRAG in one run (none, vector, graph, hybrid)
+SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama --limit 20
+
+
+SARA runs now include a per-mode comparison summary with hybrid-vs-none deltas,
+so you can directly show the impact of adding GraphRAG context.
 # Same run with local open-source model
 SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5
 ```

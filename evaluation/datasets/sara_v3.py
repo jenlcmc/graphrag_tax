@@ -18,6 +18,10 @@ from src.preprocessing.normalizer import extract_usc_refs
 
 _LABEL_RE = re.compile(r"\b(entailment|contradiction|unknown)\b", re.IGNORECASE)
 _NUMBER_RE = re.compile(r"-?\$?\s*([0-9][0-9,]*(?:\.[0-9]+)?)")
+_CALC_MARKER_RE = re.compile(
+    r"(?:step\s*\d+|=|\+|\-|\*|/|minus|plus|times|divide|therefore|final answer)",
+    re.IGNORECASE,
+)
 
 
 def _clean_money(text: str) -> str:
@@ -29,6 +33,39 @@ def _extract_first_number(text: str) -> str | None:
     if not match:
         return None
     return _clean_money(match.group(1))
+
+
+def _extract_all_numbers(text: str) -> list[str]:
+    return [_clean_money(token) for token in _NUMBER_RE.findall(text)]
+
+
+def _citation_metrics_for_case(response: str, case: EvalCase) -> dict:
+    """Compute citation correctness against SARA case fact/question references."""
+    cited_refs = extract_usc_refs(response or "")
+    cited_lower = [ref.lower() for ref in cited_refs]
+
+    fact_refs = [ref.lower() for ref in case.relevant_ids]
+    fact_ref_set = set(fact_refs)
+
+    matched = [ref for ref in cited_refs if ref.lower() in fact_ref_set]
+    matched_set = {ref.lower() for ref in matched}
+
+    if not fact_ref_set:
+        precision = 1.0 if not cited_refs else 0.0
+        recall = None
+    else:
+        precision = (len(matched) / len(cited_refs)) if cited_refs else 0.0
+        recall = len(matched_set) / len(fact_ref_set)
+
+    return {
+        "cited_refs": cited_refs,
+        "matched_refs": sorted(matched_set),
+        "citation_fact_precision": round(precision, 4),
+        "citation_fact_recall": round(recall, 4) if recall is not None else None,
+        "n_fact_refs": len(fact_ref_set),
+        "n_cited_refs": len(cited_refs),
+        "n_correct_cited_refs": len(matched),
+    }
 
 
 def _parse_case_file(path: Path) -> tuple[str, str, str, str]:
@@ -176,11 +213,20 @@ class SARAV3Dataset(Dataset):
     def score(self, response: str, case: EvalCase, judge_fn) -> dict:
         """Score SARA responses with deterministic checks when possible.
 
-        Numeric and entailment/contradiction cases are scored without API calls.
-        Fallback is LLM-as-judge when a freeform expected answer exists.
+        Numeric and entailment/contradiction cases are scored without API calls,
+        with explicit checks for:
+          - answer correctness,
+          - citation grounding to section references present in case facts/question,
+          - presence of multi-step numeric reasoning for arithmetic cases.
+
+        Fallback is LLM-as-judge only when a freeform expected answer exists.
         """
         expected = (case.rubric or "").strip()
         expected_type = str(case.metadata.get("expected_type", "freeform"))
+        citation = _citation_metrics_for_case(response or "", case)
+
+        answer_correct = 0.0
+        calc_steps_present = None
 
         if not expected:
             judge_result = {
@@ -191,24 +237,55 @@ class SARAV3Dataset(Dataset):
         elif expected_type == "label":
             expected_label = expected.lower()
             response_label_match = _LABEL_RE.search(response or "")
-            earned = 1.0 if response_label_match and response_label_match.group(1).lower() == expected_label else 0.0
+            answer_correct = 1.0 if response_label_match and response_label_match.group(1).lower() == expected_label else 0.0
+
+            # Label cases: prioritize correct legal conclusion, then citation grounding.
+            earned = round(0.75 * answer_correct + 0.25 * citation["citation_fact_precision"], 4)
             judge_result = {
                 "earned": earned,
                 "total": 1.0,
-                "feedback": f"Expected {expected}; matched={bool(earned)}",
+                "feedback": (
+                    f"Expected {expected}; "
+                    f"answer_correct={bool(answer_correct)}; "
+                    f"citation_precision={citation['citation_fact_precision']:.2f}"
+                ),
             }
         elif expected_type == "numeric":
             expected_num = _extract_first_number(expected)
-            response_num = _extract_first_number(response or "")
-            earned = 1.0 if expected_num and response_num and expected_num == response_num else 0.0
+            response_numbers = _extract_all_numbers(response or "")
+            answer_correct = 1.0 if expected_num and expected_num in response_numbers else 0.0
+
+            calc_steps_present = bool(
+                len(response_numbers) >= 2 and _CALC_MARKER_RE.search(response or "")
+            )
+            calc_score = 1.0 if calc_steps_present else 0.0
+
+            # Numeric cases emphasize correct value, plus calculation trace and citation grounding.
+            earned = round(
+                0.60 * answer_correct
+                + 0.20 * calc_score
+                + 0.20 * citation["citation_fact_precision"],
+                4,
+            )
             judge_result = {
                 "earned": earned,
                 "total": 1.0,
-                "feedback": f"Expected numeric {expected_num}; got {response_num}",
+                "feedback": (
+                    f"Expected numeric {expected_num}; "
+                    f"answer_correct={bool(answer_correct)}; "
+                    f"calc_steps_present={bool(calc_steps_present)}; "
+                    f"citation_precision={citation['citation_fact_precision']:.2f}"
+                ),
             }
         else:
             rubric = f"[+1.00] Response matches expected SARA answer: {expected}"
             judge_result = judge_fn(response, rubric)
+            answer_correct = float(judge_result.get("earned") or 0.0)
+
+        judge_result["answer_correct"] = round(answer_correct, 4)
+        judge_result["calculation_steps_present"] = calc_steps_present
+        judge_result.update(citation)
+        judge_result["citation_correct"] = citation["n_correct_cited_refs"] > 0
 
         rouge_result = _compute_rouge(response or "", expected) if expected else {}
         return {**judge_result, **rouge_result}

@@ -66,16 +66,32 @@ def test_sara_score_numeric_and_label():
     dataset = SARAV3Dataset()
 
     class Case:
-        def __init__(self, rubric, expected_type):
+        def __init__(self, rubric, expected_type, relevant_ids=None):
             self.rubric = rubric
             self.metadata = {"expected_type": expected_type}
             self.question = "placeholder"
+            self.relevant_ids = relevant_ids or []
 
-    numeric_case = Case("$26948", "numeric")
-    label_case = Case("Entailment", "label")
+    numeric_case = Case("$26948", "numeric", ["26 USC §63"])
+    label_case = Case("Entailment", "label", ["26 USC §152"])
 
-    numeric = dataset.score("The tax is $26,948.", numeric_case, lambda *_: {})
-    label = dataset.score("This is entailment.", label_case, lambda *_: {})
+    numeric = dataset.score(
+        "Step 1: income 33200. Step 2: deduction 6252. "
+        "33200 - 6252 = 26948 under 26 USC §63. Final Answer: 26948.",
+        numeric_case,
+        lambda *_: {},
+    )
+    label = dataset.score(
+        "Under 26 USC §152, this is entailment. Final Answer: Entailment.",
+        label_case,
+        lambda *_: {},
+    )
 
+    assert numeric["answer_correct"] == 1.0
+    assert numeric["calculation_steps_present"] is True
+    assert numeric["citation_fact_precision"] == 1.0
     assert numeric["earned"] == 1.0
+
+    assert label["answer_correct"] == 1.0
+    assert label["citation_fact_precision"] == 1.0
     assert label["earned"] == 1.0

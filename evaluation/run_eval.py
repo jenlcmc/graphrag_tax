@@ -158,6 +158,16 @@ You are a knowledgeable U.S. federal tax assistant. \
 Answer using your training knowledge. Cite statutory sections and IRS \
 publications where relevant. Show calculation steps for numeric questions."""
 
+_SARA_SYSTEM_APPEND = """\
+
+SARA-specific output requirements:
+- Use only provided case facts for taxpayer-specific facts and numbers.
+- Use legal rules from citations and retrieved law excerpts.
+- Cite only section references that appear in the allowed citation list.
+- For numeric cases, show clear step-by-step arithmetic before the final answer.
+- End with a final line in this exact format: Final Answer: <value-or-label>
+"""
+
 
 def build_system_prompt(chunks: list[dict]) -> str:
     if not chunks:
@@ -168,6 +178,27 @@ def build_system_prompt(chunks: list[dict]) -> str:
         + "\n\n---\n\n".join(excerpts)
     )
     return _SYSTEM_WITH_CONTEXT.format(context_block=context_block)
+
+
+def _build_sara_user_prompt(case: EvalCase) -> str:
+    """Build SARA case prompt with explicit facts and citation constraints."""
+    facts = str(case.metadata.get("context", "")).strip()
+    allowed_refs = case.relevant_ids or []
+    allowed_text = ", ".join(allowed_refs) if allowed_refs else "None"
+
+    return (
+        "SARA Case Facts:\n"
+        f"{facts or '(no facts provided)'}\n\n"
+        "Question:\n"
+        f"{case.question}\n\n"
+        "Allowed section citations (must come from facts/question):\n"
+        f"{allowed_text}\n\n"
+        "Instructions:\n"
+        "1) Use facts for taxpayer details and values.\n"
+        "2) Show arithmetic steps for numeric answers.\n"
+        "3) Cite only allowed section citations.\n"
+        "4) End with: Final Answer: <value-or-label>."
+    )
 
 
 def call_llm(system: str, question: str, model_id: str) -> str:
@@ -227,6 +258,23 @@ def _call_ollama(system: str, question: str, model_id: str) -> str:
     try:
         with urlrequest.urlopen(req, timeout=cfg.OLLAMA_TIMEOUT_SECONDS) as resp:
             raw = resp.read().decode("utf-8")
+    except urlerror.HTTPError as exc:
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8")
+        except Exception:
+            detail = ""
+
+        if exc.code == 404:
+            raise RuntimeError(
+                f"Ollama model '{model_name}' was not found. "
+                f"Run: ollama pull {model_name}."
+            ) from exc
+
+        raise RuntimeError(
+            f"Ollama HTTP error {exc.code}. "
+            f"Endpoint={cfg.OLLAMA_BASE_URL}. Details={detail[:200]}"
+        ) from exc
     except urlerror.URLError as exc:
         raise RuntimeError(
             "Failed to reach Ollama server. "
@@ -383,11 +431,19 @@ def run_case(
     skip_scoring: bool,
 ) -> dict:
     """Run one case end-to-end and return a serializable result dict."""
+    is_sara = dataset.name == "sara_v3"
+
+    retrieval_query = case.question
+    if is_sara:
+        facts = str(case.metadata.get("context", "")).strip()
+        if facts:
+            retrieval_query = f"{case.question}\n{facts}"
+
     # Retrieve context (mode=none returns empty chunks without touching the index)
     if mode == "none" or retriever is None:
         chunks = []
     else:
-        chunks = retriever.query(case.question, k=cfg.TOP_K_VECTOR, mode=mode)
+        chunks = retriever.query(retrieval_query, k=cfg.TOP_K_VECTOR, mode=mode)
     retrieved_ids = [c["section_id"] for c in chunks]
 
     # Generate response
@@ -395,7 +451,10 @@ def run_case(
         response = _MOCK_RESPONSE
     else:
         system = build_system_prompt(chunks)
-        response = call_llm(system, case.question, model_id)
+        user_prompt = _build_sara_user_prompt(case) if is_sara else case.question
+        if is_sara:
+            system = f"{system}{_SARA_SYSTEM_APPEND}"
+        response = call_llm(system, user_prompt, model_id)
 
     # Score via the dataset's own score() method.
     # TaxBench returns both LLM-as-judge fields AND rouge1/rouge2/rougeL.
@@ -519,6 +578,97 @@ def _print_summary(results: list[dict]) -> None:
                 f"(avg over {len(grounding_values)} citation-bearing cases)"
             )
 
+    for key, label in (
+        ("answer_correct", "answer_correct"),
+        ("calculation_steps_present", "calc_steps"),
+        ("citation_fact_precision", "citation_fact_precision"),
+        ("citation_fact_recall", "citation_fact_recall"),
+    ):
+        values = [
+            float(r["scoring"][key])
+            for r in results
+            if key in r.get("scoring", {}) and r["scoring"].get(key) is not None
+        ]
+        if values:
+            avg = sum(values) / len(values)
+            print(f"  {label}: {avg:.4f}  (avg over {len(values)} cases)")
+
+
+def _collect_mode_summary(results: list[dict]) -> dict:
+    """Collect compact per-mode metrics for cross-mode comparison."""
+    summary: dict[str, float] = {}
+
+    scored = [r for r in results if r.get("scoring", {}).get("earned") is not None]
+    if scored:
+        earned = sum(float(r["scoring"]["earned"]) for r in scored)
+        total = sum(float(r["scoring"].get("total") or 0.0) for r in scored)
+        if total > 0:
+            summary["score_pct"] = (earned / total) * 100.0
+
+    for key in (
+        "answer_correct",
+        "calculation_steps_present",
+        "citation_fact_precision",
+        "citation_fact_recall",
+        "recall_at_k",
+        "mrr",
+    ):
+        if key in {"recall_at_k", "mrr"}:
+            values = [
+                float(r["retrieval_metrics"][key])
+                for r in results
+                if key in r.get("retrieval_metrics", {})
+            ]
+        else:
+            values = [
+                float(r["scoring"][key])
+                for r in results
+                if key in r.get("scoring", {}) and r["scoring"].get(key) is not None
+            ]
+
+        if values:
+            summary[key] = sum(values) / len(values)
+
+    return summary
+
+
+def _print_mode_comparison(mode_summaries: dict[str, dict]) -> None:
+    """Print concise mode comparison and hybrid-vs-none deltas."""
+    if not mode_summaries:
+        return
+
+    print("\n=== Mode Comparison ===")
+    metrics_order = [
+        "score_pct",
+        "answer_correct",
+        "calculation_steps_present",
+        "citation_fact_precision",
+        "citation_fact_recall",
+        "recall_at_k",
+        "mrr",
+    ]
+
+    for mode in ALL_MODES:
+        if mode not in mode_summaries:
+            continue
+        parts = []
+        summary = mode_summaries[mode]
+        for metric in metrics_order:
+            if metric in summary:
+                parts.append(f"{metric}={summary[metric]:.4f}")
+        if parts:
+            print(f"  {mode:<6}: " + ", ".join(parts))
+
+    if "none" in mode_summaries and "hybrid" in mode_summaries:
+        print("\n  Hybrid improvement vs none:")
+        base = mode_summaries["none"]
+        hybrid = mode_summaries["hybrid"]
+        for metric in metrics_order:
+            if metric in base and metric in hybrid:
+                delta = hybrid[metric] - base[metric]
+                sign = "+" if delta >= 0 else ""
+                print(f"    {metric}: {sign}{delta:.4f}")
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -628,6 +778,7 @@ def main() -> None:
         print("Retriever not needed for mode=none; skipping index load.")
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
+    mode_summaries: dict[str, dict] = {}
 
     for mode in modes:
         tag = f"dryrun" if args.dry_run else args.model
@@ -656,6 +807,7 @@ def main() -> None:
 
         # Summary stats
         _print_summary(results)
+        mode_summaries[mode] = _collect_mode_summary(results)
 
         payload = {
             "dataset": dataset.name,
@@ -666,6 +818,9 @@ def main() -> None:
         }
         out_path.write_text(json.dumps(payload, indent=2))
         print(f"  Saved -> {out_path}")
+
+    if len(mode_summaries) > 1:
+        _print_mode_comparison(mode_summaries)
 
     print("\nDone.")
 
