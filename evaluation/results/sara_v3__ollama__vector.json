@@ -8,7 +8,7 @@
       "id": "s151_d_1_neg",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
       "rubric": "Contradiction",
-      "response": "### Step 1: Identify the Relevant Statutes and Conditions\n\n1.  **Exemption Amount Definition**:\n    According to **26 USC \u00a7151(d)(1)**, the standard \"exemption amount\" is **$2,000**.\n\n2.  **Condition for Reduction to Zero**:\n    The amount is reduced to $0 if **26 USC \u00a7151(d)(2)** applies:\n    *   There must be a **deduction allowed under \u00a7151** for the taxpayer.\n    *   The deduction for the taxpayer must be allowable to **another taxpayer** for the taxable year beginning in the **calendar year** the individual's taxable year begins.\n\n3.  **Analysis of Alice's Status**:\n    *   The facts state: \"Alice is entitled to an exemption under section 151(b)...\"\n    *   **\u00a7151(b)** specifically allows the taxpayer (Alice) and their spouse to claim exemptions. It implies that \u00a7151(d)(2)(C) (\"An exemption... for each individual who is a dependent... of the taxpayer...\") is being utilized by Alice herself.\n    *   The facts state: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    *   **\u00a726 USC \u00a724(a)** states that a deduction under \u00a7151 is allowed for a *qualifying child* for which the taxpayer is allowed a deduction under \u00a7151.\n    *   Since the facts explicitly state \"No other taxpayer is entitled to a deduction for Alice,\" the condition for \u00a7151(d)(2) (i.e., the deduction being allowable to *another* taxpayer) is **not met**. The deduction is only allowable to Alice herself.\n\n4.  **Applicable Section**:\n    *   Because the deduction is not allowable to another taxpayer, **26 USC \u00a7151(d)(2)** does not apply.\n    *   Therefore, Alice is entitled to the full exemption amount defined in \u00a7151(d)(1).\n\n### Step 2: Perform Calculation\n\n*   **Standard Exemption Amount** (\u00a7151(d)(1)): $2,000.\n*   **Phaseout Calculation** (\u00a7151(d)(3)):\n    *   Calculate excess over the threshold for \u00a7151(d)(3)(B). For a single taxpayer (Alice is not specified as married or with a spouse having no income), the threshold is **$1,250** (derived from \u00a7151(d)(3)(B) substitution for a single filer).\n    *   The facts do not indicate Alice's Adjusted Gross Income (AGI) exceeds $1,250. In the absence of this information, we assume the exemption is not reduced.\n    *   Percentage reduction: $2\\%$ for every $2,500$ (or fraction thereof) over $1,250$.\n    *   Since AGI is not stated to exceed the threshold, no reduction applies.\n*   **Conclusion**:\n    *   Exemption Amount = $2,000$.\n    *   The question asks if the amount is equal to **$0**.\n    *   $2,000 \\neq 0$.\n\nTherefore, the statement \"Alice's exemption amount... is equal to $0$\" is **False**.\n\n### Step 3: Determine Entailment/Contradiction\n\n*   The question asserts a specific fact: \"Alice's exemption amount... is equal to $0\".\n*   Our reasoning proves this fact is **False** given the statutory rules and the facts.\n*   In Entailment tasks, a \"Contradiction\" occurs when the premise (facts) contradicts the hypothesis (question). Since the hypothesis contradicts the derived truth, the answer is Contradiction.\n*   According to the prompt instructions: \"map False=>Contradiction\".\n\nFinal Answer: Contradiction",
+      "response": "### Reasoning\n\n1.  **Identify the Taxpayer and Year**: The facts state Alice is a taxpayer for the year **2015**.\n2.  **Identify the Statute and Provision**: We are looking at **26 USC \u00a7151(d)(1)**.\n3.  **Analyze the General Rule**:\n    *   Section 151(d)(1) states the exemption amount is $2,000 (in general) unless disallowed or subject to phaseout.\n    *   Section 151(d)(5) specifically addresses taxable years beginning after December 31, 2017, and through 2025, stating: \"In the case of a taxable year beginning after December 31, 2017 , and before January 1, 2026 \u2014 (A) Exemption amount The term 'exemption amount' means zero.\"\n4.  **Analyze the Specific Condition (Phaseout)**:\n    *   To be disallowed (amount = $0), Alice must meet two conditions found in 151(d)(1)(a) and (b):\n        *   Her Adjusted Gross Income (AGI) must exceed the phase-out amount in effect under 26 USC \u00a768(b) for the year.\n        *   The AGI must exceed the applicable phase-out threshold by at least two percentage points for every $2,500 (or fraction thereof) exceeding the base.\n    *   **Fact Check**: The provided facts state: *\"Alice is entitled to an exemption under section 151(b)...\"*\n    *   **Logical Deduction**: In tax logic problems of this type, the explicit statement \"Taxpayer X is entitled to an exemption\" is the primary indicator of the outcome. If the result were $0, the text would explicitly state \"Alice does not qualify,\" \"Alice's income exceeds limits,\" or similar conditions leading to disqualification. The presence of an exemption implies the qualification test was passed (AGI was below the threshold, or the specific rules for the year 2015 did not trigger the zero-reduction).\n    *   Furthermore, the facts specify \"No other taxpayer is entitled to a deduction.\" Under 26 USC \u00a7151(c), an individual with a deduction under \u00a7151(b) generally loses eligibility for the deduction under \u00a7151 if the deduction is allowed to another taxpayer. *However*, the primary question asks about the **exemption amount**. The disqualification of the *deduction* would be a secondary consequence, distinct from the direct result on the exemption amount itself. The fact that she *has* an exemption in the facts implies the exemption amount was calculated and is not zero due to disqualification.\n\n5.  **Conclusion**: Based on the text stating Alice \"is entitled to an exemption,\" the exemption amount is not zero. Therefore, the statement \"Alice's exemption amount under section 151(d)(1) is equal to $0\" is **false**.\n\nFinal Answer: Contradiction",
       "mode": "vector",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
@@ -33,32 +33,27 @@
         }
       },
       "citation_metrics": {
-        "n_citations": 9,
-        "n_supported_citations": 1,
-        "citation_precision": 0.1111,
-        "citation_coverage": 0.1111,
-        "citation_sentences": 11,
-        "grounded_sentences": 1,
-        "grounding_rate": 0.0909,
+        "n_citations": 6,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 7,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
         "citations": [
           "26 USC \u00a7151",
           "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(c)",
           "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(d)(2)",
-          "26 USC \u00a7151(d)(2)(C)",
-          "26 USC \u00a7151(d)(3)",
-          "26 USC \u00a7151(d)(3)(B)",
-          "26 USC \u00a724(a)",
-          "26 USC \u00a726"
+          "26 USC \u00a7151(d)(5)",
+          "26 USC \u00a768(b)"
         ],
-        "supported_citations": [
-          "26 USC \u00a724(a)"
-        ]
+        "supported_citations": []
       },
       "scoring": {
-        "earned": 0.8055,
+        "earned": 0.8333,
         "total": 1.0,
-        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.22",
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.33",
         "predicted_label": "contradiction",
         "test_goal_label": "contradiction",
         "expected_label_consistent_with_test": true,
@@ -67,34 +62,31 @@
         "cited_refs": [
           "26 USC \u00a7151",
           "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(c)",
           "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(d)(2)",
-          "26 USC \u00a7151(d)(2)(C)",
-          "26 USC \u00a7151(d)(3)",
-          "26 USC \u00a7151(d)(3)(B)",
-          "26 USC \u00a724(a)",
-          "26 USC \u00a726"
+          "26 USC \u00a7151(d)(5)",
+          "26 USC \u00a768(b)"
         ],
         "matched_refs": [
           "26 usc \u00a7151(b)",
           "26 usc \u00a7151(d)(1)"
         ],
-        "citation_fact_precision": 0.2222,
+        "citation_fact_precision": 0.3333,
         "citation_fact_recall": 1.0,
         "n_fact_refs": 2,
-        "n_cited_refs": 9,
+        "n_cited_refs": 6,
         "n_correct_cited_refs": 2,
         "citation_correct": true,
-        "rouge1": 0.0043,
+        "rouge1": 0.005,
         "rouge2": 0.0,
-        "rougeL": 0.0043
+        "rougeL": 0.005
       }
     },
     {
       "id": "s151_d_1_pos",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
       "rubric": "Entailment",
-      "response": "Based on the provided text and instructions:\n\n1.  **Analyze the Facts**: The text states \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\" It also states \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n2.  **Analyze the Question**: The question asks if \"Alice's exemption amount under section 151(d)(1) is equal to $2000.\"\n3.  **Evaluate the Relationship**:\n    *   The facts confirm Alice is entitled to an exemption under 151(b). However, they do not specify the *amount* of that exemption.\n    *   The question assumes a specific numerical value ($2000) for the exemption amount based on the cited rule 151(d)(1).\n    *   The provided facts do not contain the specific dollar amount associated with the exemption or the rule 151(d)(1). Therefore, we cannot determine if the amount is exactly $2000. The facts establish entitlement, but not the specific monetary value or the applicability of 151(d)(1) (which usually relates to the deduction for exemptions claimed by other taxpayers, whereas 151(b) covers the exemption for the taxpayer themselves).\n4.  **Determine the Label**: Since the information required to verify the claim (the specific exemption amount) is missing in the facts, the relationship is indeterminate.\n    *   Entailment would require the facts to *prove* the statement is true.\n    *   Contradiction would require the facts to *prove* the statement is false.\n    *   Unknown is the correct classification because the facts do not provide enough information to support or refute the specific numerical claim.\n\nUnknown\n\nFinal Answer: Unknown",
+      "response": "The provided SARA facts state that Alice is entitled to an exemption for herself under section 151(b) for the year 2015. The question asks if Alice's exemption amount under section 151(d)(1) is equal to $2000.\n\nBased on the provided text, there is no information regarding the specific amount of the exemption under section 151(d)(1), nor is there any mention of any deduction at all. In fact, the facts explicitly state that \"No other taxpayer is entitled to a deduction for Alice in 2015.\" Section 151(b) typically relates to exemptions, while section 151(d)(1) relates to the deduction (often the \"exemption plus deduction\" rule in specific contexts, or specifically referencing a taxable year where no deduction is allowed to calculate the exemption amount). Since the text confirms no deduction is allowed for Alice, the exemption amount under section 151(d)(1) (which would be zero in such scenarios, or undefined without further calculation steps not present in the text) cannot be proven to be $2000. The provided facts do not contain the value of $2000 and do not support the assertion that it is $2000. Therefore, the statement is contradicted by the information given.\n\nFinal Answer: Contradiction",
       "mode": "vector",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
@@ -123,7 +115,7 @@
         "n_supported_citations": 0,
         "citation_precision": 0.0,
         "citation_coverage": 0.0,
-        "citation_sentences": 2,
+        "citation_sentences": 5,
         "grounded_sentences": 0,
         "grounding_rate": 0.0,
         "citations": [
@@ -135,8 +127,8 @@
       "scoring": {
         "earned": 0.25,
         "total": 1.0,
-        "feedback": "Expected Entailment; predicted_label=unknown; answer_correct=False; citation_precision=1.00",
-        "predicted_label": "unknown",
+        "feedback": "Expected Entailment; predicted_label=contradiction; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "contradiction",
         "test_goal_label": "entailment",
         "expected_label_consistent_with_test": true,
         "answer_correct": 0.0,
@@ -155,9 +147,9 @@
         "n_cited_refs": 2,
         "n_correct_cited_refs": 2,
         "citation_correct": true,
-        "rouge1": 0.0079,
+        "rouge1": 0.0,
         "rouge2": 0.0,
-        "rougeL": 0.0079
+        "rougeL": 0.0
       }
     }
   ]

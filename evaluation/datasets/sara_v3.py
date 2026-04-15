@@ -14,6 +14,7 @@ from pathlib import Path
 
 from evaluation.datasets.base import Dataset, EvalCase
 from src.preprocessing.normalizer import extract_usc_refs
+from src.utils.reference_matching import best_match_score
 
 
 _LABEL_RE = re.compile(r"\b(entailment|contradiction|unknown)\b", re.IGNORECASE)
@@ -259,24 +260,47 @@ def _citation_metrics_for_case(response: str, case: EvalCase) -> dict:
     fact_refs = [ref.lower() for ref in case.relevant_ids]
     fact_ref_set = set(fact_refs)
 
-    matched = [ref for ref in cited_refs if ref.lower() in fact_ref_set]
-    matched_set = {ref.lower() for ref in matched}
+    # Raw exact matching (kept for diagnostics).
+    matched_exact = [ref for ref in cited_refs if ref.lower() in fact_ref_set]
+    matched_exact_set = {ref.lower() for ref in matched_exact}
+
+    # Normalized matching: map each citation to the best fact reference and
+    # collapse over-citation within the same fact branch.
+    normalized_keys: set[str] = set()
+    matched_fact_set: set[str] = set()
+    for citation in cited_lower:
+        score, best_fact = best_match_score(citation, list(fact_ref_set))
+        if score > 0 and best_fact is not None:
+            normalized_keys.add(f"fact:{best_fact}")
+            matched_fact_set.add(best_fact)
+        else:
+            normalized_keys.add(f"raw:{citation}")
+
+    normalized_total = len(normalized_keys)
+    normalized_matched = len({k for k in normalized_keys if k.startswith("fact:")})
 
     if not fact_ref_set:
         precision = 1.0 if not cited_refs else 0.0
         recall = None
+        precision_raw = precision
+        recall_raw = recall
     else:
-        precision = (len(matched) / len(cited_refs)) if cited_refs else 0.0
-        recall = len(matched_set) / len(fact_ref_set)
+        precision = (normalized_matched / normalized_total) if normalized_total else 0.0
+        recall = len(matched_fact_set) / len(fact_ref_set)
+        precision_raw = (len(matched_exact) / len(cited_refs)) if cited_refs else 0.0
+        recall_raw = len(matched_exact_set) / len(fact_ref_set)
 
     return {
         "cited_refs": cited_refs,
-        "matched_refs": sorted(matched_set),
+        "matched_refs": sorted(matched_fact_set),
         "citation_fact_precision": round(precision, 4),
         "citation_fact_recall": round(recall, 4) if recall is not None else None,
+        "citation_fact_precision_raw": round(precision_raw, 4),
+        "citation_fact_recall_raw": round(recall_raw, 4) if recall_raw is not None else None,
         "n_fact_refs": len(fact_ref_set),
         "n_cited_refs": len(cited_refs),
-        "n_correct_cited_refs": len(matched),
+        "n_correct_cited_refs": len(matched_fact_set),
+        "n_cited_refs_normalized": normalized_total,
     }
 
 

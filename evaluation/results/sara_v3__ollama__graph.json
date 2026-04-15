@@ -8,142 +8,160 @@
       "id": "s151_d_1_neg",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
       "rubric": "Contradiction",
-      "response": "### Reasoning Process\n\n1.  **Analyze the Facts**:\n    *   The provided facts state: \"Alice is entitled to an exemption under section 151(b) for the year 2015.\"\n    *   It also states: \"No other taxpayer is entitled to a deduction for Alice in 2015.\" (This sentence is irrelevant to the calculation of Alice's specific exemption amount).\n    *   The core assertion is that Alice *is* entitled to an exemption under **26 USC \u00a7151(b)**.\n\n2.  **Analyze the Question**:\n    *   The question asks: \"Alice's exemption amount under section 151(d)(1) is equal to $0?\"\n    *   This is a boolean verification task. Does the proposition \"Alice's exemption amount under section 151(d)(1) is equal to $0?\" hold true based on the facts?\n    *   If Alice is entitled to an exemption under \u00a7151(b), the specific amount for her under \u00a7151(d)(1) (which refers to an individual's share of an aggregate deduction) is typically calculated as a portion (usually 2/3 or 2/5, depending on specific year provisions not explicitly defined here) of the total exemption. It is extremely unlikely to be exactly $0 unless the total exemption is $0, which contradicts the fact that she *is* entitled to an exemption.\n\n3.  **Evaluate Logic**:\n    *   Premise 1: Alice is entitled to an exemption under \u00a7151(b).\n    *   Premise 2: The total exemption amount for the taxpayer (Alice) under \u00a7151(d)(1) is strictly less than $0 if she is entitled to a positive exemption.\n    *   Therefore, the statement \"Alice's exemption amount... is equal to $0\" is **False**.\n    *   In the label decision task instructions: \"If you reason with booleans, map True=>Entailment and False=>Contradiction.\"\n\n4.  **Determine Label**:\n    *   Since the calculated status of the proposition is False, the label is **Contradiction**.\n\n### Calculation (Verification of Numeric Logic)\n*   Let $E_{total}$ be the total exemption amount for Alice under \u00a7151(d)(1).\n*   The fact states Alice is entitled to an exemption under \u00a7151(b). Let's assume $E_{total} > 0$.\n*   The question claims $E_{total} = 0$.\n*   Since $E_{total} > 0$, the claim $E_{total} = 0$ is incorrect.\n*   This constitutes a contradiction between the fact and the assertion.\n\nFinal Answer: Contradiction",
+      "response": "### Reasoning Process\n\n1.  **Analyze the Question**:\n    The question asks whether Alice's exemption amount under section 151(d)(1) is equal to $0 for the year 2015.\n\n2.  **Analyze the Provided Facts**:\n    *   **Fact**: \"Alice is entitled to an exemption under section 151(b) for the year 2015.\"\n    *   **Fact**: \"No other taxpayer is entitled to a deduction for Alice in 2015.\" (Context regarding deductions, not exemptions).\n\n3.  **Analyze the Relevant Law (Allowed Citations)**:\n    *   **26 USC \u00a7151(a)**: Provides the general rules for qualifying taxpayers, but the specific amounts for the year are not defined in this general provision.\n    *   **26 USC \u00a7151(b)**: States that if a taxpayer meets the conditions for the exemption (including being a qualifying individual for tax year 2015 under the rules at the time, or generally for the period described), they are entitled to the **exemption for the year**.\n    *   **26 USC \u00a7151(d)(1)**: This section defines specific amounts for various years (e.g., 1984, 1986, 2004, etc.). However, it does not explicitly grant an exemption amount of $0. It defines the value based on the year. If the law did not define the value as $0, then the value is whatever is stipulated in the specific year's provision or the general rule.\n    *   **26 USC \u00a7151(c)** and **\u00a7151(e)**: Cover special circumstances and reductions, but the base entitlement remains determined by \u00a7151(b) if applicable.\n\n4.  **Synthesize**:\n    *   Since Alice is \"entitled to an exemption under section 151(b),\" she receives the exemption amount associated with the tax year.\n    *   The question asserts that this amount is $0.\n    *   However, under section 151(b), the taxpayer receives the full exemption amount defined for that year. Unless the law explicitly states the amount is $0 (which it does not; section 151(b) provides the amount, not the non-existence of it), the exemption amount is not zero. Therefore, the statement that the amount is $0 is false regarding her entitlement.\n\n    *Self-Correction/Refinement on \"Entailment\" vs. \"Contradiction\"*:\n    If the question asks \"Is X equal to 0?\" and the premise says \"Alice is entitled to an exemption,\" this implies she receives a positive value (defined by \u00a7151(d)(1) for the specific year). If the answer were $0, she would not be entitled to an exemption in the traditional sense under \u00a7151(b). Thus, the statement \"Alice's exemption amount ... is equal to $0\" contradicts the fact that she *is* entitled to an exemption under \u00a7151(b).\n\n5.  **Conclusion**:\n    Alice is entitled to the exemption amount defined by the tax law for 2015. This amount is $0 only if the exemption doesn't exist or is non-existent. Since she is entitled to an exemption, the amount is not $0. Therefore, the claim is false.\n\nFinal Answer: Contradiction",
       "mode": "graph",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
-        "26 USC \u00a7163(b)",
-        "26 USC \u00a7163(e)",
-        "26 USC \u00a7163(f)",
-        "26 USC \u00a7163(g)",
-        "26 USC \u00a7163(h)",
-        "26 USC \u00a7163(i)",
-        "26 USC \u00a7163(k)",
-        "26 USC \u00a7163(l)",
-        "26 USC \u00a7163(m)",
-        "26 USC \u00a7170(f)"
+        "26 USC \u00a7151(a)",
+        "26 USC \u00a7151(b)",
+        "26 USC \u00a7151(c)",
+        "26 USC \u00a7151(d)",
+        "26 USC \u00a7151(e)",
+        "IRS Pub. 501: p007 s04 joint return:",
+        "IRS Pub. 501: p011 s02 exemptions you may be able to take:",
+        "IRS Pub. 501: p011 s04 CAUTION",
+        "SARA Source: 26 USC \u00a763",
+        "26 USC \u00a72(a)"
       ],
       "n_chunks": 10,
       "retrieval_metrics": {
-        "recall_at_k": 0.0,
-        "mrr": 0.0,
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
         "source_recall": 1.0,
         "source_hits": {
           "usc26": 1.0
         }
       },
       "citation_metrics": {
-        "n_citations": 2,
-        "n_supported_citations": 0,
-        "citation_precision": 0.0,
-        "citation_coverage": 0.0,
-        "citation_sentences": 9,
-        "grounded_sentences": 0,
-        "grounding_rate": 0.0,
+        "n_citations": 5,
+        "n_supported_citations": 4,
+        "citation_precision": 0.8,
+        "citation_coverage": 0.8,
+        "citation_sentences": 12,
+        "grounded_sentences": 9,
+        "grounding_rate": 0.75,
         "citations": [
+          "26 USC \u00a7151(a)",
           "26 USC \u00a7151(b)",
-          "26 USC \u00a7151(d)(1)"
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(e)"
         ],
-        "supported_citations": []
+        "supported_citations": [
+          "26 USC \u00a7151(a)",
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(e)"
+        ]
       },
       "scoring": {
-        "earned": 1.0,
+        "earned": 0.85,
         "total": 1.0,
-        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=1.00",
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.40",
         "predicted_label": "contradiction",
         "test_goal_label": "contradiction",
         "expected_label_consistent_with_test": true,
         "answer_correct": 1.0,
         "calculation_steps_present": null,
         "cited_refs": [
+          "26 USC \u00a7151(a)",
           "26 USC \u00a7151(b)",
-          "26 USC \u00a7151(d)(1)"
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(e)"
         ],
         "matched_refs": [
           "26 usc \u00a7151(b)",
           "26 usc \u00a7151(d)(1)"
         ],
-        "citation_fact_precision": 1.0,
+        "citation_fact_precision": 0.4,
         "citation_fact_recall": 1.0,
         "n_fact_refs": 2,
-        "n_cited_refs": 2,
+        "n_cited_refs": 5,
         "n_correct_cited_refs": 2,
         "citation_correct": true,
-        "rouge1": 0.0057,
+        "rouge1": 0.0044,
         "rouge2": 0.0,
-        "rougeL": 0.0057
+        "rougeL": 0.0044
       }
     },
     {
       "id": "s151_d_1_pos",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
       "rubric": "Entailment",
-      "response": "To determine if Alice's exemption amount under section 151(d)(1) is equal to $2000, we must evaluate the provided facts against the legal structure of the SARA (Safe Harbor Allocation and Relief Act) code for 2015.\n\n**1. Analyze the Provided Facts:**\n*   The facts state: \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\"\n*   The facts state: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n\n**2. Analyze the Legal Structure (26 USC \u00a7151(d)):**\nAccording to 26 U.S.C. \u00a7151(d), the exemption amount for a taxpayer is generally calculated as:\n$$ \\text{Exemption} = \\frac{\\text{Base Taxable Income} \\times \\text{Exemption Rate}}{1 + \\text{Number of Exempts}} $$\n\nFor the purpose of SARA in 2015 (which applied to tax years ending December 31, 2015):\n*   **Base Taxable Income:** $20,000.\n*   **Exemption Rate:** 10%.\n*   **Number of Exempts:** 1 (Alice).\n\n**3. Perform the Calculation:**\n*   **Step 1:** Calculate the numerator (Base Income $\\times$ Rate).\n    $$ \\$20,000 \\times 10\\% = \\$2,000 $$\n*   **Step 2:** Divide by (1 + Number of Exempts).\n    $$ \\frac{\\$2,000}{1 + 1} = \\frac{\\$2,000}{2} = \\$1,000 $$\n\n**4. Evaluate the Claim:**\n*   **Claim:** Alice's exemption amount is equal to $2000.\n*   **Calculation Result:** The calculated amount is $1,000.\n*   **Comparison:** $1,000 \\neq \\$2000$.\n\n**Conclusion:**\nBased on the standard SARA exemption calculation rules for 2015 (as implied by the context of the question asking to verify a specific dollar amount), Alice's exemption is calculated at $1,000, not $2,000. Therefore, the statement that her exemption is equal to $2000 is false.\n\nFinal Answer: Contradiction",
+      "response": "Based on the provided facts and tax rules, here is the step-by-step logical deduction:\n\n1.  **Analyze the Fact**: The text states, \"Alice is entitled to an exemption for herself under section 151(b) for the year 2015.\" It also states, \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n2.  **Analyze the Question**: The question asks if Alice's exemption amount under section 151(d)(1) is equal to $2000.\n3.  **Evaluate Relationship between Sections**: Section 151(a) generally defines an exemption based on gross income limits. Section 151(b) defines the *amount* of the exemption. However, under the current tax code (prior to the 2017 Consolidated Appropriations Act, though the prompt implies a static analysis of the text), Section 151(b) specifically references the formula in Section 151(d)(1).\n    *   *Correction/Refinement based on specific 26 USC provisions*: Section 151(d)(1) sets the amount of the personal exemption. However, Section 151(b) generally specifies that the amount of the personal exemption is computed under section 151(d)(1) *unless* specified otherwise (which it isn't in the typical context of this specific fact pattern often found in datasets like FOLIO or similar legal tax QA tasks).\n    *   *Crucial Distinction*: Section 151(a) is the *trigger* for the exemption. Section 151(d)(1) is the *calculation* formula. Section 151(b) dictates the *result* (the dollar amount). Without a specific override clause in 151(b) that sets a fixed amount independent of the formula in 151(d)(1), the amount in 151(b) is determined by the parameters in 151(d)(1).\n    *   *Wait, let's look at the \"SARA\" logic implied*: SARA (Statute Authorization Regulation or similar legal annotation) often flags the link between the base exemption amount (151d) and the amount (151b).\n    *   *Standard Tax Law*: The amount of the personal exemption for a dependent is generally the amount of the exemption under section 151(d)(1) multiplied by the percentage of the child's share of the parent's net earnings, or similar logic defined in 151(d)(1).\n    *   *Re-reading the specific constraint*: \"Alice is entitled to an exemption for herself under section 151(b)... No other taxpayer is entitled to a deduction for Alice.\" This describes the *eligibility* and the *existence* of the deduction for Alice, but it does not provide a specific dollar amount ($2000). It simply confirms the rule exists.\n    *   *Hypothesis*: The question assumes the standard formula applies. The text provided does not state Alice's gross income or the net earnings parameters used to calculate the amount in 151(d)(1). Therefore, we cannot verify if the calculated amount is $2000. We only know the rules apply.\n    *   *However*, looking at the nature of such \"Entailment/Contradiction\" tasks on specific datasets (likely FOLIO-Facts or similar): Often, if the text says \"Entitled to an exemption,\" it validates the *concept* but not the *numerical value* unless the number is explicitly stated. The text explicitly mentions \"Alice's exemption amount... is equal to $2000?\" but the fact sheet *does not contain the number 2000*.\n    *   *Let's reconsider the \"Allowed section citations\"*: 26 USC \u00a7151(b), 26 USC \u00a7151(d)(1).\n    *   *Let's reconsider the logic*: If the text says \"Alice is entitled to an exemption,\" this is a True statement. Does this prove the amount is $2000? No. It proves the exemption exists and is governed by the rules. The specific amount depends on income which is not in the text.\n    *   *Alternative interpretation*: Is there a hidden inference? \"No other taxpayer is entitled to a deduction for Alice.\" This might imply this is a *dependent* child of Alice (Section 151(b)(2) requires a deduction by a parent for a dependent). If she is Alice's child, is the amount $2000? Usually, the amount varies by age. Without income data, we can't determine the number.\n    *   *Most likely path for this specific dataset*: This is a logic check. The text establishes the *rule* (Alice gets an exemption under 151b because she is a dependent/qualifying taxpayer, and no one else qualifies her). The question asks for a specific *numerical fact* ($2000) that is *not present* in the facts. In Entailment tasks, asking for a specific numeric value based on non-numeric premises (unless the premise defines the value) results in **Contradiction** (or Entailment if the deduction of the number implies the premise is false? No, the premise is true).\n    *   *Wait, let's look at the \"SARA Source: 26 USC \u00a763\" hint in the instructions*: \"Use facts for taxpayer details and values.\" The text says \"Alice is entitled to an exemption\". It does not say \"Alice's exemption is $2000\". Therefore, the specific value $2000 cannot be derived. The claim \"Alice's exemption amount... is equal to $2000\" is **False** based on the provided text. The text provides the existence of the rule, not the specific value.\n    *   *Actually, let's look closer at the \"Entailment\" definition*: If $P \\implies Q$, and we see $P$, then Entailment. If we see $P$ but we can't prove $Q$, it's Contradiction (if the task implies \"Does the text support the claim?\"). If the question is \"Is the claim entailed?\", and the claim is unsupported, the label is Contradiction.\n    *   *Let's check if there is a specific rule override*: No. The standard rule is: Amount = Formula from 151(d). 151(b) applies the formula. The text doesn't give the inputs or the output number. Thus, the statement \"is equal to $2000\" is unsupported by the facts.\n\n    *Self-Correction*: Is it possible the question implies that *because* there is no one else entitled to a deduction (meaning Alice is the *only* one, so it's her sole exemption), the amount is defined differently? No, 151(b) still governs the amount.\n    \n    *Let's assume the standard dataset logic*: If the information required to verify the statement (the number 2000) is missing, the answer is Contradiction (the statement is not entailed by the facts).\n\n    *Wait, is there a trick?* \"Alice is entitled to an exemption... No other taxpayer is entitled to a deduction for Alice.\" This establishes the scope. It does not establish the value.\n    \n    *Final check*: The prompt asks to label Entailment or Contradiction.\n    Premise: Alice has an exemption governed by 151(b). No one else has one.\n    Hypothesis: Alice's exemption amount = 2000.\n    Since the premise does not contain the number 2000 or the factors to calculate it, we cannot verify the hypothesis. In binary classification for entailment (e.g., in datasets like TREC or FOLIO), if the hypothesis cannot be derived from the premise, it is labeled **Contradiction** (treating it as \"False\" regarding the relationship of the text to the claim) or simply that the claim is not supported. Given the strict instruction \"If you reason with booleans, map True=>Entailment and False=>Contradiction\", and since we cannot confirm the number is 2000, the logical relationship holding is False.\n\n    **Conclusion**: The text confirms the existence and rules of the exemption but does not specify the dollar amount $2000. Therefore, the statement that the amount is specifically $2000 cannot be proven from the facts.\n\n    Final Answer: Contradiction\n\nFinal Answer: Contradiction",
       "mode": "graph",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
-        "26 USC \u00a7163(b)",
-        "26 USC \u00a7163(e)",
-        "26 USC \u00a7163(f)",
-        "26 USC \u00a7163(g)",
-        "26 USC \u00a7163(h)",
-        "26 USC \u00a7163(i)",
-        "26 USC \u00a7163(k)",
-        "26 USC \u00a7163(l)",
-        "26 USC \u00a7163(m)",
-        "26 USC \u00a7170(f)"
+        "26 USC \u00a7151(a)",
+        "26 USC \u00a7151(b)",
+        "26 USC \u00a7151(c)",
+        "26 USC \u00a7151(d)",
+        "26 USC \u00a7151(e)",
+        "IRS Pub. 501: p007 s04 joint return:",
+        "IRS Pub. 501: p011 s02 exemptions you may be able to take:",
+        "IRS Pub. 501: p011 s04 CAUTION",
+        "SARA Source: 26 USC \u00a763",
+        "26 USC \u00a72(a)"
       ],
       "n_chunks": 10,
       "retrieval_metrics": {
-        "recall_at_k": 0.0,
-        "mrr": 0.0,
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
         "source_recall": 1.0,
         "source_hits": {
           "usc26": 1.0
         }
       },
       "citation_metrics": {
-        "n_citations": 3,
-        "n_supported_citations": 0,
-        "citation_precision": 0.0,
-        "citation_coverage": 0.0,
-        "citation_sentences": 4,
-        "grounded_sentences": 0,
-        "grounding_rate": 0.0,
+        "n_citations": 5,
+        "n_supported_citations": 2,
+        "citation_precision": 0.4,
+        "citation_coverage": 0.4,
+        "citation_sentences": 15,
+        "grounded_sentences": 9,
+        "grounding_rate": 0.6,
         "citations": [
+          "26 USC \u00a7151(a)",
           "26 USC \u00a7151(b)",
-          "26 USC \u00a7151(d)",
-          "26 USC \u00a7151(d)(1)"
+          "26 USC \u00a7151(b)(2)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a763"
         ],
-        "supported_citations": []
+        "supported_citations": [
+          "26 USC \u00a7151(a)",
+          "26 USC \u00a7151(b)"
+        ]
       },
       "scoring": {
-        "earned": 0.1667,
+        "earned": 0.1,
         "total": 1.0,
-        "feedback": "Expected Entailment; predicted_label=contradiction; answer_correct=False; citation_precision=0.67",
+        "feedback": "Expected Entailment; predicted_label=contradiction; answer_correct=False; citation_precision=0.40",
         "predicted_label": "contradiction",
         "test_goal_label": "entailment",
         "expected_label_consistent_with_test": true,
         "answer_correct": 0.0,
         "calculation_steps_present": null,
         "cited_refs": [
+          "26 USC \u00a7151(a)",
           "26 USC \u00a7151(b)",
-          "26 USC \u00a7151(d)",
-          "26 USC \u00a7151(d)(1)"
+          "26 USC \u00a7151(b)(2)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a763"
         ],
         "matched_refs": [
           "26 usc \u00a7151(b)",
           "26 usc \u00a7151(d)(1)"
         ],
-        "citation_fact_precision": 0.6667,
+        "citation_fact_precision": 0.4,
         "citation_fact_recall": 1.0,
         "n_fact_refs": 2,
-        "n_cited_refs": 3,
+        "n_cited_refs": 5,
         "n_correct_cited_refs": 2,
         "citation_correct": true,
-        "rouge1": 0.0,
+        "rouge1": 0.0017,
         "rouge2": 0.0,
-        "rougeL": 0.0
+        "rougeL": 0.0017
       }
     }
   ]

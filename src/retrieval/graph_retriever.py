@@ -282,6 +282,7 @@ class GraphRetriever:
         query_terms = _query_terms(text)
         section_refs = _extract_section_refs(text)
         irs_prefix_refs = _extract_irs_prefix_refs(text)
+        section_ref_candidates: set[str] = set()
 
         hinted_prefixes: set[str] = set()
         for term in query_terms:
@@ -295,8 +296,13 @@ class GraphRetriever:
             score = 0.0
             overlap = sum(1 for term in query_terms if term in node_id_lower or term in title)
 
-            if node_id_lower in section_refs:
+            section_ref_match = any(
+                _section_ref_matches_node(section_ref, node_id_lower)
+                for section_ref in section_refs
+            )
+            if section_ref_match:
                 score += 6.0
+                section_ref_candidates.add(node_id)
 
             if irs_prefix_refs and any(node_id_lower.startswith(prefix) for prefix in irs_prefix_refs):
                 score += 2.5
@@ -319,6 +325,15 @@ class GraphRetriever:
 
         if not scored_matches:
             return []
+
+        if section_refs and section_ref_candidates:
+            scored_matches = {
+                node_id: score
+                for node_id, score in scored_matches.items()
+                if node_id in section_ref_candidates
+            }
+            if not scored_matches:
+                return []
 
         max_raw = max(scored_matches.values())
 
@@ -371,11 +386,24 @@ def _extract_section_refs(text: str) -> set[str]:
 
     # Extract simple and subsection references.
     for num, sub in _SECTION_REF_RE.findall(text):
+        num_norm = num.lower()
         if sub:
-            refs.add(f"26 usc §{num}({sub})")
-        refs.add(f"26 usc §{num}")
+            refs.add(f"26 usc §{num_norm}{sub.lower()}")
+        refs.add(f"26 usc §{num_norm}")
 
     return refs
+
+
+def _section_ref_matches_node(section_ref: str, node_id_lower: str) -> bool:
+    """Return True when a query section ref matches a graph node section id.
+
+    Supports exact matches and descendant subsection prefix matches, e.g.:
+      ref:  26 usc §151
+      node: 26 usc §151(d)
+    """
+    if node_id_lower == section_ref:
+        return True
+    return node_id_lower.startswith(section_ref + "(")
 
 
 def _extract_irs_prefix_refs(text: str) -> set[str]:

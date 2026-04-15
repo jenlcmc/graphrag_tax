@@ -44,6 +44,7 @@ from src import config as cfg
 from src.ingestion.irs_xml_parser import SOURCE_LABELS
 from src.preprocessing.normalizer import extract_irs_refs, extract_usc_refs
 from src.retrieval.hybrid_retriever import HybridRetriever
+from src.utils.reference_matching import best_match_score
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +172,26 @@ SARA-specific output requirements:
 """
 
 
+def _sara_label_options(case: EvalCase) -> list[str]:
+    """Return allowed label outputs for a SARA label case.
+
+    SARA v3 is predominantly a binary entailment/contradiction task.
+    Allow Unknown only when the question text explicitly signals an
+    indeterminate label scenario.
+    """
+    question = str(case.question or "").lower()
+    allow_unknown = bool(
+        re.search(
+            r"\b(unknown|indeterminate|cannot\s+determine|insufficient\s+information)\b",
+            question,
+        )
+    )
+    options = ["Entailment", "Contradiction"]
+    if allow_unknown:
+        options.append("Unknown")
+    return options
+
+
 def build_system_prompt(chunks: list[dict]) -> str:
     if not chunks:
         return _SYSTEM_NO_CONTEXT
@@ -198,9 +219,15 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
         instructions.append("3) Show arithmetic steps for numeric answers.")
         instructions.append("4) End with: Final Answer: <numeric-value>.")
     elif expected_type == "label":
-        instructions.append(
-            "3) This is a label decision task; Final Answer must be exactly Entailment, Contradiction, or Unknown."
-        )
+        label_options = _sara_label_options(case)
+        if "Unknown" in label_options:
+            instructions.append(
+                "3) This is a label decision task; Final Answer must be exactly one of: Entailment, Contradiction, Unknown."
+            )
+        else:
+            instructions.append(
+                "3) This is a binary label decision task; Final Answer must be exactly Entailment or Contradiction (do not answer Unknown)."
+            )
         instructions.append("4) If you reason with booleans, map True=>Entailment and False=>Contradiction.")
     else:
         instructions.append("3) End with: Final Answer: <value-or-label>.")
@@ -224,9 +251,14 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
 def _build_sara_system_append(case: EvalCase) -> str:
     expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
     if expected_type == "label":
+        label_options = _sara_label_options(case)
+        if "Unknown" in label_options:
+            label_line = "- For label tasks, the final answer must be exactly one of: Entailment, Contradiction, Unknown."
+        else:
+            label_line = "- For label tasks, the final answer must be exactly one of: Entailment, Contradiction."
         return (
             f"{_SARA_SYSTEM_APPEND}\n"
-            "- For label tasks, the final answer must be exactly one of: Entailment, Contradiction, Unknown.\n"
+            f"{label_line}\n"
             "- Do not output a numeric value for label tasks."
         )
     if expected_type == "numeric":
@@ -451,21 +483,39 @@ def _compute_retrieval_metrics(
     if not relevant_ids or not retrieved_ids:
         return {}
 
-    relevant_set   = {r.lower() for r in relevant_ids}
+    relevant_set = {r.lower() for r in relevant_ids}
     retrieved_lower = [r.lower() for r in retrieved_ids]
 
-    found = sum(1 for rid in retrieved_lower if rid in relevant_set)
-    recall = found / len(relevant_set)
+    found_exact = sum(1 for rid in retrieved_lower if rid in relevant_set)
+    recall_exact = found_exact / len(relevant_set)
 
-    mrr = 0.0
+    # Relaxed hierarchical recall: partial credit for parent/child subsection matches.
+    best_scores = []
+    for relevant in relevant_set:
+        best_score, _ = best_match_score(relevant, retrieved_lower)
+        best_scores.append(best_score)
+    recall_hier = sum(best_scores) / len(relevant_set)
+
+    mrr_exact = 0.0
     for rank, rid in enumerate(retrieved_lower, start=1):
         if rid in relevant_set:
-            mrr = 1.0 / rank
+            mrr_exact = 1.0 / rank
             break
 
+    # Weighted reciprocal rank with hierarchical match scores.
+    mrr_hier = 0.0
+    for rank, rid in enumerate(retrieved_lower, start=1):
+        score, _ = best_match_score(rid, list(relevant_set))
+        if score > 0:
+            mrr_hier = max(mrr_hier, score / rank)
+
     result = {
-        "recall_at_k": round(recall, 4),
-        "mrr":         round(mrr,    4),
+        # Backward-compatible keys now report relaxed hierarchical metrics.
+        "recall_at_k": round(recall_hier, 4),
+        "mrr": round(mrr_hier, 4),
+        # Exact metrics remain available for strict evaluation comparisons.
+        "recall_at_k_exact": round(recall_exact, 4),
+        "mrr_exact": round(mrr_exact, 4),
     }
 
     relevant_sources = {
@@ -600,8 +650,31 @@ def _print_summary(results: list[dict]) -> None:
     if retrieval_cases:
         for metric in ("recall_at_k", "mrr"):
             avg = sum(r["retrieval_metrics"][metric] for r in retrieval_cases) / len(retrieval_cases)
-            label = "recall@k" if metric == "recall_at_k" else "MRR     "
+            label = "recall@k(hier)" if metric == "recall_at_k" else "MRR(hier)   "
             print(f"  {label}: {avg:.4f}  (avg over {len(retrieval_cases)} cases)")
+
+        exact_cases = [
+            r
+            for r in retrieval_cases
+            if "recall_at_k_exact" in r["retrieval_metrics"] and "mrr_exact" in r["retrieval_metrics"]
+        ]
+        if exact_cases:
+            avg_recall_exact = (
+                sum(r["retrieval_metrics"]["recall_at_k_exact"] for r in exact_cases)
+                / len(exact_cases)
+            )
+            avg_mrr_exact = (
+                sum(r["retrieval_metrics"]["mrr_exact"] for r in exact_cases)
+                / len(exact_cases)
+            )
+            print(
+                f"  recall@k(exact): {avg_recall_exact:.4f}  "
+                f"(avg over {len(exact_cases)} cases)"
+            )
+            print(
+                f"  MRR(exact)   : {avg_mrr_exact:.4f}  "
+                f"(avg over {len(exact_cases)} cases)"
+            )
 
         source_recall_cases = [
             r for r in retrieval_cases if "source_recall" in r["retrieval_metrics"]
@@ -669,6 +742,18 @@ def _print_summary(results: list[dict]) -> None:
             avg = sum(values) / len(values)
             print(f"  {label}: {avg:.4f}  (avg over {len(values)} cases)")
 
+    predicted_labels = [
+        str(r["scoring"].get("predicted_label", "")).lower()
+        for r in results
+        if r.get("scoring", {}).get("predicted_label") is not None
+    ]
+    if predicted_labels:
+        unknown_rate = predicted_labels.count("unknown") / len(predicted_labels)
+        print(
+            f"  unknown_label_rate: {unknown_rate:.4f}  "
+            f"(avg over {len(predicted_labels)} label cases)"
+        )
+
 
 def _collect_mode_summary(results: list[dict]) -> dict:
     """Collect compact per-mode metrics for cross-mode comparison."""
@@ -686,15 +771,25 @@ def _collect_mode_summary(results: list[dict]) -> dict:
         "calculation_steps_present",
         "citation_fact_precision",
         "citation_fact_recall",
+        "unknown_label_rate",
         "recall_at_k",
         "mrr",
+        "recall_at_k_exact",
+        "mrr_exact",
     ):
-        if key in {"recall_at_k", "mrr"}:
+        if key in {"recall_at_k", "mrr", "recall_at_k_exact", "mrr_exact"}:
             values = [
                 float(r["retrieval_metrics"][key])
                 for r in results
                 if key in r.get("retrieval_metrics", {})
             ]
+        elif key == "unknown_label_rate":
+            labels = [
+                str(r["scoring"].get("predicted_label", "")).lower()
+                for r in results
+                if r.get("scoring", {}).get("predicted_label") is not None
+            ]
+            values = [labels.count("unknown") / len(labels)] if labels else []
         else:
             values = [
                 float(r["scoring"][key])
@@ -717,11 +812,14 @@ def _print_mode_comparison(mode_summaries: dict[str, dict]) -> None:
     metrics_order = [
         "score_pct",
         "answer_correct",
+        "unknown_label_rate",
         "calculation_steps_present",
         "citation_fact_precision",
         "citation_fact_recall",
         "recall_at_k",
         "mrr",
+        "recall_at_k_exact",
+        "mrr_exact",
     ]
 
     for mode in ALL_MODES:
