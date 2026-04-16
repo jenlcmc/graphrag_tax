@@ -2,13 +2,13 @@
   "dataset": "sara_v3",
   "model": "ollama:qwen3.5:2b",
   "mode": "hybrid",
-  "n_cases": 2,
+  "n_cases": 20,
   "cases": [
     {
       "id": "s151_d_1_neg",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $0?",
       "rubric": "Contradiction",
-      "response": "### Reasoning Process\n\n1.  **Analyze the Allowed Statutory Rules**:\n    *   The prompt provides **26 USC \u00a7151(d)(1)** as the governing rule for determining an exemption amount.\n    *   **Paragraph (1) General Rule**: The \"exemption amount\" means **$2,000**.\n    *   **Paragraph (2) Disallowed in Case of Dependents**: \"In the case of an individual with respect to whom a deduction under this section is allowable to another taxpayer for a taxable year beginning in the calendar year in which the individual's taxable year begins, the exemption amount applicable to such individual... shall be **zero**.\"\n\n2.  **Analyze the Case Facts**:\n    *   Taxpayer: Alice.\n    *   Year: 2015.\n    *   Condition provided: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n\n3.  **Evaluate Applicability**:\n    *   According to paragraph (2) of \u00a7151(d), if a deduction is *not* allowable to another taxpayer for a taxable year beginning in the calendar year in which the individual's taxable year begins, the exemption amount is not disallowed by statute.\n    *   However, we must check if Alice meets the condition for the **zero** exemption amount specifically. The condition requires a \"deduction... allowable to another taxpayer\".\n    *   The facts explicitly state: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    *   Since the prerequisite condition (deduction allowable to another taxpayer) is **false**, Alice falls outside the specific \"zero\" exception created by \u00a7151(d)(2).\n    *   Therefore, Alice is entitled to the general exemption amount defined in paragraph (1).\n\n4.  **Calculate/Identify the Amount**:\n    *   General exemption amount (paragraph 1 of \u00a7151(d)): $2,000.\n    *   The question asks if Alice's exemption amount is equal to $0.\n    *   Based on the analysis, the amount is $2,000, not $0.\n    *   Therefore, the statement \"Alice's exemption amount... is equal to $0\" is **False**.\n\n5.  **Map to Binary Label**:\n    *   False $\\rightarrow$ Contradiction.\n\n### Step-by-Step Calculation (Verification)\n*   Statutory Rule 26 USC \u00a7151(d)(1)(A): $2,000.\n*   Fact: Alice's deduction is not allowable to another taxpayer.\n*   Result: Alice does not qualify for the zero exemption; she qualifies for the $2,000 exemption.\n*   Question Check: Is the amount equal to $0? No, it is $2,000.\n*   Conclusion: The statement contradicts the facts and statutes.\n\nFinal Answer: Contradiction",
+      "response": "Based on the provided text and facts:\n\n1.  **Fact**: Alice is entitled to an exemption under section 151(b) for the year 2015.\n2.  **Fact**: No other taxpayer is entitled to a deduction for Alice in 2015.\n3.  **Analysis**:\n    *   Section 151(b) states that the term \"exemption amount\" generally means $2,000.\n    *   However, **26 USC \u00a7151(d)(2)** (often referenced as 26 USC \u00a7151(d)(1) in this context to denote the general rule) contains the specific exception: \"In the case of an individual with respect to whom a deduction under this section is allowable to another taxpayer... the exemption amount applicable to such individual... shall be zero.\"\n    *   In the provided SARA facts, it is explicitly stated that **\"No other taxpayer is entitled to a deduction for Alice in 2015.\"** This satisfies the condition in 26 USC \u00a7151(d)(2)(B).\n    *   Although the facts mention a deduction under **26 USC \u00a7151(b)**, this citation (referencing \u00a7151(b) and citing \u00a7151(b) again) describes the *existence* or *eligibility* of a dependent's benefit, not the *resulting* exemption amount for Alice herself.\n    *   The specific question asks if Alice's exemption amount under **26 USC \u00a7151(d)(1)** is equal to **$0**.\n    *   Since Alice has no other taxpayer claiming a deduction for her in that year, she is an \"individual with respect to whom a deduction... is allowable to another taxpayer [is false]\"? Wait, let's re-read \u00a7151(d)(2) carefully.\n        *   \u00a7151(d)(2)(B) says the exemption amount is zero if \"a deduction under this section is allowable to another taxpayer for a taxable year beginning in the calendar year in which the individual's taxable year begins.\"\n        *   The provided fact says: \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n        *   Therefore, the condition \"a deduction... is allowable to another taxpayer\" is **false** for Alice.\n        *   Because the condition is false, the zero exemption does **not** apply. Her exemption remains the standard $2,000 (unless otherwise reduced, but \u00a7151(d)(2) only sets it to zero if the condition is met).\n    *   Therefore, Alice's exemption amount is **not** $0.\n\nSince the statement \"Alice's exemption amount under section 151(d)(1) is equal to $0\" is **False**, the relationship between the Fact and the Statement is Contradiction.\n\nFinal Answer: Contradiction",
       "mode": "hybrid",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
@@ -25,8 +25,10 @@
       ],
       "n_chunks": 10,
       "retrieval_metrics": {
-        "recall_at_k": 0.5,
-        "mrr": 0.3333,
+        "recall_at_k": 0.875,
+        "mrr": 0.75,
+        "recall_at_k_exact": 0.5,
+        "mrr_exact": 0.3333,
         "source_recall": 1.0,
         "source_hits": {
           "usc26": 1.0
@@ -37,53 +39,57 @@
         "n_supported_citations": 1,
         "citation_precision": 0.25,
         "citation_coverage": 0.25,
-        "citation_sentences": 5,
-        "grounded_sentences": 2,
-        "grounding_rate": 0.4,
+        "citation_sentences": 10,
+        "grounded_sentences": 3,
+        "grounding_rate": 0.3,
         "citations": [
-          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(b)",
           "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(d)(1)(A)",
-          "26 USC \u00a7151(d)(2)"
+          "26 USC \u00a7151(d)(2)",
+          "26 USC \u00a7151(d)(2)(B)"
         ],
         "supported_citations": [
-          "26 USC \u00a7151(d)"
+          "26 USC \u00a7151(b)"
         ]
       },
       "scoring": {
-        "earned": 0.8125,
+        "earned": 1.0,
         "total": 1.0,
-        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.25",
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=1.00",
         "predicted_label": "contradiction",
         "test_goal_label": "contradiction",
         "expected_label_consistent_with_test": true,
         "answer_correct": 1.0,
         "calculation_steps_present": null,
         "cited_refs": [
-          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(b)",
           "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(d)(1)(A)",
-          "26 USC \u00a7151(d)(2)"
+          "26 USC \u00a7151(d)(2)",
+          "26 USC \u00a7151(d)(2)(B)"
         ],
         "matched_refs": [
+          "26 usc \u00a7151(b)",
           "26 usc \u00a7151(d)(1)"
         ],
-        "citation_fact_precision": 0.25,
-        "citation_fact_recall": 0.5,
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
         "n_fact_refs": 2,
         "n_cited_refs": 4,
-        "n_correct_cited_refs": 1,
+        "n_correct_cited_refs": 2,
+        "n_cited_refs_normalized": 2,
         "citation_correct": true,
-        "rouge1": 0.0056,
+        "rouge1": 0.0052,
         "rouge2": 0.0,
-        "rougeL": 0.0056
+        "rougeL": 0.0052
       }
     },
     {
       "id": "s151_d_1_pos",
       "question": "Alice's exemption amount under section 151(d)(1) is equal to $2000?",
       "rubric": "Entailment",
-      "response": "### Reasoning\n\n1.  **Identify the Taxpayer and Year**: The taxpayer is Alice, and the year in question is 2015. This is supported by the SARA facts: `s151_b_applies(\"Alice\",2015)`.\n2.  **Verify the Status of Deduction**: The problem states \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    *   Under **26 USC \u00a7151(d)(1)**, the exemption amount in general is $2,000.\n    *   However, subsection (2) states: \"Except as otherwise provided in this subsection, the term 'exemption amount' means $2,000.\"\n    *   It continues: \"In the case of an individual with respect to whom a deduction under this section is allowable to another taxpayer for a taxable year... the exemption amount... shall be zero.\"\n    *   The provided facts explicitly state that \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n    *   Therefore, the condition for the exemption amount disallowed by \u00a7151(d)(2) is not met. Alice has no one else to deduct from.\n    *   Consequently, the general rule applies: the exemption amount is $2,000.\n3.  **Check for Reducibility**: Alice's AGI is not mentioned, and thus we assume it is below the phaseout thresholds (or we apply the default assumption that the base amount applies unless AGI dictates otherwise). There are no specific facts suggesting an AGI that would trigger the phaseout (which applies to 2018\u20132025 and would reduce the amount to $0). Thus, the amount remains the base statutory amount.\n4.  **Apply Rule**: Since no one else is claiming the deduction, Alice's specific exemption amount is exactly the general statutory default of $2,000.\n\n### Calculation\n\n*   **Statutory Basis**: 26 USC \u00a7151(b) defines the default exemption amount as $2,000.\n*   **Condition Check**: 26 USC \u00a7151(d)(2) reduces the amount to $0 if a deduction is allowable to another taxpayer.\n*   **Fact Application**: The facts state \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n*   **Conclusion**: Because the condition to reduce the amount to $0 is false (no one else is claiming the deduction), the default amount of $2,000 remains valid.\n\nFinal Answer: True",
+      "response": "### Reasoning\n\n1.  **Identify the Rule**: We must determine the \"exemption amount\" under section 151(d)(1) for the specific taxpayer (Alice) in the specific year (2015).\n2.  **Locate the Statutory Rule**: The provided excerpt for `[26 USC \u00a7151(d)]` states under paragraph (1) \"In general\":\n    > \"the term 'exemption amount' means **$2,000**.\"\n3.  **Analyze for Exceptions**:\n    *   Paragraph (1) explicitly states: \"Except as otherwise provided in this subsection...\"\n    *   Paragraph (2) defines when the amount is zero: \"In the case of an individual with respect to whom a deduction under this section is allowable to another taxpayer for a taxable year beginning in the calendar year in which the individual's taxable year begins...\"\n    *   Paragraph (3)(C) states: \"The provisions of this paragraph shall not apply for purposes of determining whether a deduction under this section with respect to any individual is allowable to another taxpayer for any taxable year.\" This clarifies that the exemption amount cannot be reduced to zero simply because another person gets a deduction.\n4.  **Apply Facts to Rule**:\n    *   **Taxpayer**: Alice.\n    *   **Year**: 2015.\n    *   **Condition Check**: Does Alice have another taxpayer deducting her for 2015? The fact pattern states: \"No other taxpayer is entitled to a deduction for Alice in 2015.\" This condition in paragraph (2) is **not** met.\n    *   **Conclusion on Status**: Alice's status falls under the \"In general\" rule of paragraph (1).\n5.  **Calculate Value**:\n    *   Under paragraph (1), the exemption amount is defined as **$2,000**.\n    *   The question asks if the amount is equal to **$2,000**.\n6.  **Verify Constraints**: The reasoning relies solely on the statutory definition of $2,000 in section 151(d)(1), which is one of the allowed citations. There is no statutory reduction to zero because another deduction did not apply.\n\n### Calculation Steps\n\n1.  **Define Exemption Amount**: Per `[26 USC \u00a7151(d)]`, the general exemption amount is $2,000.\n2.  **Check for Reduction to Zero**: Per `[26 USC \u00a7151(d)]` paragraph (2), the exemption is $0 only if a deduction is allowable to another taxpayer for the current year.\n3.  **Apply to Facts**: The facts state \"No other taxpayer is entitled to a deduction for Alice in 2015.\"\n4.  **Determine Final Amount**: Since the condition for reduction to zero is false, the general rule applies. The amount remains $2,000.\n5.  **Compare**: Is $2,000 equal to $2,000? Yes.\n\nFinal Answer: Entailment",
       "mode": "hybrid",
       "model": "ollama:qwen3.5:2b",
       "retrieved_ids": [
@@ -100,28 +106,532 @@
       ],
       "n_chunks": 10,
       "retrieval_metrics": {
-        "recall_at_k": 0.5,
-        "mrr": 0.3333,
+        "recall_at_k": 0.875,
+        "mrr": 0.75,
+        "recall_at_k_exact": 0.5,
+        "mrr_exact": 0.3333,
         "source_recall": 1.0,
         "source_hits": {
           "usc26": 1.0
         }
       },
       "citation_metrics": {
-        "n_citations": 3,
+        "n_citations": 2,
         "n_supported_citations": 1,
+        "citation_precision": 0.5,
+        "citation_coverage": 0.5,
+        "citation_sentences": 5,
+        "grounded_sentences": 3,
+        "grounding_rate": 0.6,
+        "citations": [
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7151(d)"
+        ]
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=entailment; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "entailment",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(d)(1)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(d)(1)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 0.5,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 0.5,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 1,
+        "citation_correct": true,
+        "rouge1": 0.0051,
+        "rouge2": 0.0,
+        "rougeL": 0.0051
+      }
+    },
+    {
+      "id": "s151_d_3_A_neg",
+      "question": "Under section 151(d)(3)(A), Alice's exemption amount is reduced to $1900?",
+      "rubric": "Contradiction",
+      "response": "Based on the provided SARA Case Text and Facts:\n\n1.  **Identify the Taxpayer's Adjusted Gross Income (AGI):**\n    The `amount_(span(\"income\",8,13),span(260932,28,33)).` fact indicates Alice's income is $260,932.\n\n2.  **Determine the Applicable Threshold (Section 68(b)):**\n    The `s151_c(\"Alice\",_,2000,2015).` fact states Alice is eligible for an exemption of $2,000 under section 151(c).\n    Looking at **26 USC \u00a7151(d)(3)(A)**: \"In the case of any taxpayer whose adjusted gross income for the taxable year exceeds the applicable amount in effect under section 68(b), the exemption amount shall be reduced...\"\n    The `s151_c` definition for Alice is explicitly set to **$2,000**. Therefore, the \"applicable amount\" under section 68(b) for Alice in 2015 is $2,000.\n\n3.  **Calculate the Reduction for Section 151(d)(3)(A):**\n    *   **Condition Check:** Alice's income ($260,932) is greater than the applicable amount ($2,000). Condition met.\n    *   **Calculate Excess:** $260,932 - $2,000 = $258,932.\n    *   **Calculate Applicable Percentage:**\n        *   Source: **26 USC \u00a7151(d)(3)(B)**: \"...the term 'applicable percentage' means 2 percentage points for each $2,500 (or fraction thereof) by which the taxpayer's adjusted gross income for the taxable year exceeds the applicable amount in effect under section 68(b).\"\n        *   Calculation:\n            *   Base units = $258,932 / $2,500 = 103.5728...\n            *   Apply fractional rounding: Round up to 104 (since there is a remainder > 0).\n        *   Percentage: 104 units * 2% = **208%**.\n    *   **Apply Reduction:** The excess income is 208% of the exemption base ($2,000).\n    *   **New Exemption Amount:** The statute (d)(3)(A) does not specify a floor, but the total reduction cannot exceed the exemption amount in some interpretations, or we simply apply the reduction to the base. However, the prompt asks if the amount is reduced *to* $1900.\n    *   Let's re-read the logic strictly. The reduction is 208% of the $2,000 exemption.\n    *   $2,000 * 2.08 = $4,160.\n    *   New Exemption = $2,000 - $4,160 = **$-2,160**.\n    *   Since an exemption amount cannot be negative (and cannot be negative per \u00a7151(d)(1) \"Except as otherwise provided... means $2,000\"), the amount is reduced to **$0**.\n\n4.  **Analyze the Claim:**\n    The question asks: \"Alice's exemption amount is reduced to $1900?\"\n    Our calculation shows the exemption amount is reduced to **$0**.\n    The claim that it is reduced to **$1900** contradicts our finding.\n\n    *Self-Correction/Alternative Interpretation Check:* Is it possible the \"applicable percentage\" calculation yields a smaller reduction due to a different threshold?\n    The prompt text says: \"Alice's applicable percentage under section 151(d)(3)(B) is equal to 10%.\"\n    Let's work backwards from the prompt's assertion to see if it simplifies the math or if the prompt implies a specific scenario.\n    If the applicable percentage is 10%, that usually implies the excess is 5 units ($1,250 for married filing separately, but Alice is single/single equivalent logic? No, \u00a7151(d)(3)(A) applies to *any* taxpayer, and \u00a7151(d)(3)(B) defines the percentage).\n    Wait, if the calculation resulted in 10%, then the reduction is exactly 10% of the exemption.\n    Exemption = $2,000.\n    Reduction = 10% of $2,000 = $200.\n    New Amount = $2,000 - $200 = $1,800.\n    The claim says \"reduced to $1900\".\n    Even with the prompt's provided percentage (10%), the result ($1,800) contradicts the claim ($1,900).\n    \n    Furthermore, we must check the **Special Rules for taxable years 2018 through 2025** found in **26 USC \u00a7151(d)(5)**.\n    The taxable year in question is **2015**.\n    \u00a7151(d)(5)(A) states: \"In the case of a taxable year beginning after December 31, 2017, and before January 1, 2026 \u2014 (A) Exemption amount The term 'exemption amount' means zero.\"\n    Since 2015 is before 2018, this zero exemption rule **does not apply**. The calculation based on \u00a7151(d)(3) stands.\n\n    Based on the standard application of \u00a7151(d)(3) with Alice's $260,932 AGI and $2,000 exemption:\n    Excess = $258,932.\n    Units = 104.\n    Percentage = 208%.\n    Reduction = $4,160.\n    Exemption = -$2,160 -> $0.\n\n    Even if we strictly used the 10% figure provided in the \"Allowed section citations\" note (which might be a hint for a simplified exam question), $2000 - 200 = 1800. The text claims 1900. 1900 is not 1800.\n    Therefore, the statement is false.\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7151(d)",
+        "26 USC \u00a7151(a)",
+        "26 USC \u00a7151(b)",
+        "26 USC \u00a7151(c)",
+        "26 USC \u00a7151(e)",
+        "IRS Pub. 501: p007 s04 joint return:",
+        "IRS Pub. 501: p011 s02 exemptions you may be able to take:",
+        "IRS Pub. 501: p011 s04 CAUTION",
+        "SARA Source: 26 USC \u00a763",
+        "26 USC \u00a72(a)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.6667,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.3333,
+        "mrr_exact": 0.25,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 8,
+        "n_supported_citations": 1,
+        "citation_precision": 0.125,
+        "citation_coverage": 0.125,
+        "citation_sentences": 12,
+        "grounded_sentences": 1,
+        "grounding_rate": 0.0833,
+        "citations": [
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(3)",
+          "26 USC \u00a7151(d)(3)(A)",
+          "26 USC \u00a7151(d)(3)(B)",
+          "26 USC \u00a7151(d)(5)",
+          "26 USC \u00a7151(d)(5)(A)",
+          "26 USC \u00a768(b)"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7151(c)"
+        ]
+      },
+      "scoring": {
+        "earned": 0.9375,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.75",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(3)",
+          "26 USC \u00a7151(d)(3)(A)",
+          "26 USC \u00a7151(d)(3)(B)",
+          "26 USC \u00a7151(d)(5)",
+          "26 USC \u00a7151(d)(5)(A)",
+          "26 USC \u00a768(b)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(c)",
+          "26 usc \u00a7151(d)(3)(a)",
+          "26 usc \u00a7151(d)(3)(b)"
+        ],
+        "citation_fact_precision": 0.75,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.375,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 3,
+        "n_cited_refs": 8,
+        "n_correct_cited_refs": 3,
+        "n_cited_refs_normalized": 4,
+        "citation_correct": true,
+        "rouge1": 0.0028,
+        "rouge2": 0.0,
+        "rougeL": 0.0028
+      }
+    },
+    {
+      "id": "s151_d_3_A_pos",
+      "question": "Under section 151(d)(3)(A), Alice's exemption amount is reduced to $1800?",
+      "rubric": "Entailment",
+      "response": "### Step 1: Identify Taxpacer Income and Deduction Amount\nFrom the Structured Facts:\n- Alice's income: $260,932\n- Deduction amount received: $2,000 (from `s151_c(\"Alice\",_,2000,2015)` where the third argument is typically the amount).\n\n### Step 2: Calculate Adjusted Gross Income (AGI)\nThe text defines Alice's income as the amount received under section 151(c), which represents the deduction amount for 2015.\n- AGI = $260,932\n- The text states this corresponds to a deduction from the standard deduction (which is $11,600 for 2015, though not explicitly stated in the raw facts, the number 260,932 implies the AGI value given in the problem statement).\n- AGI = $260,932\n\n### Step 3: Determine Applicable Percentage\nAccording to **26 USC \u00a7151(d)(3)(B)**, the applicable percentage is 2 percentage points for each $2,500 (or fraction thereof) by which the taxpayer's AGI exceeds the threshold set in **26 USC \u00a7151(d)(1)**.\n- From **26 USC \u00a7151(d)(1)**, the basic exemption amount is $2,000.\n- The problem explicitly states: \"Alice's applicable percentage under section 151(d)(3)(B) is equal to 10%.\"\n- **Fact Check**: The problem provides the calculated percentage directly as a given fact for the purpose of the exercise (\"Alice's applicable percentage... is equal to 10%\"). We accept this premise as the governing fact for this specific scenario, rather than recalculating it, especially since the prompt includes this fact as a premise in the \"SARA Structured Facts\".\n- Applicable Percentage = 10%\n\n### Step 4: Calculate Reduction Under Section 151(d)(3)(A)\n**26 USC \u00a7151(d)(3)(A)** states:\n\"In the case of any taxpayer whose adjusted gross income for the taxable year exceeds the applicable amount in effect under section 68(b), the exemption amount shall be reduced by the applicable percentage.\"\n*Note: While the excerpt shows paragraph (1) as the general rule, the specific reduction mechanism described in the prompt's facts and the citation of (A) implies the application of this reduction.*\n\nHowever, there is a critical complication involving **26 USC \u00a72(a)** (which is referenced in the allowed citations list for SARA) and **26 USC \u00a7151(e)**.\n- **26 USC \u00a72(a)** relates to the limitation of deductions for individuals who are not required to file a return. While Alice's income is $260,932 (likely over $60,000), we must check if she is a qualifying individual or if the deduction is limited.\n- More critically, **26 USC \u00a7151(e)** states: \"In the case of any person who files a return and has taxable income in excess of $5,000... any deduction under section 151... shall be limited to a maximum of $1,150.\"\n\nHowever, the question asks specifically about the effect of **26 USC \u00a7151(d)(3)(A)**.\nThe calculation for the reduction based on AGI is:\n- Excess over threshold (assumed $2,500 for the calculation basis given the context of \"fraction thereof\"):\n  - Threshold = $2,000\n  - AGI = $260,932\n  - Excess = $259,932\n- Fraction of $2,500: $259,932 / $2,500 = 103.97... \u2192 104 units.\n- Percentage reduction = 104 units \u00d7 2% = 208%.\n- This reduction would exceed 100% (Section 151(d)(3)(A)(B) limits percentage to 100%).\n- Therefore, under 151(d)(3)(A), the exemption is fully reduced to zero.\n\n**Re-evaluating the Question's Premise:**\nThe question asks: \"Under section 151(d)(3)(A), Alice's exemption amount is reduced to $1800?\"\nThe provided fact states Alice's applicable percentage is **10%**.\nLet's check the math assuming the standard threshold ($2,000) and AGI ($260,932).\nReduction = ($260,932 / $2,500) * 2 = 207.972 * 2 = 415.944%? No, the rule is \"2 percentage points for each $2,500\".\nTotal $2,500 threshold units = $260,932 / $2,500 = 104.37.\n104 full units \u2192 104 * 2% = 208%.\nSince 208% > 100%, the reduction to zero is correct under standard rules.\n\n**Why does the question mention $1800?**\nLet's look at the allowed section citations: \"26 USC \u00a7151(c), 26 USC \u00a7151(d)(3)(A), 26 USC \u00a7151(d)(3)(B)\".\nPerhaps the scenario assumes the threshold is different or the AGI is interpreted differently, OR the question is testing if the **10% fact provided overrides the standard calculation**.\n\nLet's re-read the \"SARA Structured Facts\":\n`amount_(span(\"income\",8,13),span(260932,28,33)).`\nThis defines the income line. The question asks if the amount is reduced to $1800.\nIf the standard calculation yields a reduction to $0, and the fact given says \"Alice's applicable percentage... is equal to 10%\", there is a contradiction.\n\n**Scenario A: The 10% fact is correct, and $1800 is wrong.**\n- Standard calc: Reduction > 100% \u2192 $0.\n- Given Fact: 10% applies.\n- Reduction = $2000 * 10% = $200.\n- Exemption = $2000 - $200 = $1800.\n- **Contradiction?** No, they are consistent *mathematically*. If the percentage is 10%, the result is $1800. If the standard law calculation yields $0, but the premise claims the percentage is 10%, we must determine if the standard law *also* yields $1800.\n\nLet's re-calculate AGI reduction carefully.\n26 USC \u00a7151(d)(3)(A) says reduction by applicable percentage.\nIf AGI is $260,932 and threshold is $2,500.\nUnits = 260,932 / 2,500 = 104.3728...\nPercentage reduction = 2% * 104.3728 = 208.7% > 100%.\nSo legally, under \u00a7151(d)(3)(A), the exemption becomes $0.\n\nIf the answer key expects \"Entailment\", then the premise \"Alice's applicable percentage... is equal to 10%\" must be treated as a valid input for the reduction logic used in the problem context, resulting in $1800.\nCalculation: $2000 * 0.10 = $200. $2000 - $200 = $1800.\nThis matches the question's hypothesis.\n\n**Is there a reason the percentage wouldn't be 10% legally?**\nOnly if the AGI exceeded the threshold so drastically it hit the 100% cap *before* hitting the 2000 deduction? No, the cap is on the *percentage* calculated from the AGI, not the deduction.\nActually, if the deduction were already reduced to 0 by a *prior* cap (like \u00a7151(e) or a higher income cap), the 151(d)(3)(A) logic might differ. But 2015 had no caps other than the standard 2% reduction logic (which caps at 100%).\n\n**Decision Logic:**\n1. The question asks \"Is it true that... reduced to $1800?\"\n2. The provided fact says \"Applicable percentage... is 10%\".\n3. Mathematically: $2000 * 10% = $200. $2000 - $200 = $1800.\n4. If we calculate strictly by AGI ($260,932), the reduction is ~209%, which also results in $0.\n5. However, in the context of a \"SARA Case Text\" problem where facts are provided as premises (SARA specific output requirements: \"Use only provided case facts\"), we must treat the explicit fact \"10%\" as the determining truth for the calculation within the problem universe.\n6. Using the 10% fact provided in the facts: Result = $1800.\n7. The statement \"Alice's exemption amount is reduced to $1800?\" is supported by the provided fact (10% of $2000 = $200 reduction).\n\nTherefore, the statement is **Entailment** based on the provided text.\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7151(d)",
+        "26 USC \u00a7151(a)",
+        "26 USC \u00a7151(b)",
+        "26 USC \u00a7151(c)",
+        "26 USC \u00a7151(e)",
+        "IRS Pub. 501: p007 s04 joint return:",
+        "IRS Pub. 501: p011 s02 exemptions you may be able to take:",
+        "IRS Pub. 501: p011 s04 CAUTION",
+        "SARA Source: 26 USC \u00a763",
+        "26 USC \u00a72(a)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.6667,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.3333,
+        "mrr_exact": 0.25,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 9,
+        "n_supported_citations": 3,
         "citation_precision": 0.3333,
         "citation_coverage": 0.3333,
+        "citation_sentences": 15,
+        "grounded_sentences": 6,
+        "grounding_rate": 0.4,
+        "citations": [
+          "26 USC \u00a7151",
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(3)(A)",
+          "26 USC \u00a7151(d)(3)(A)(B)",
+          "26 USC \u00a7151(d)(3)(B)",
+          "26 USC \u00a7151(e)",
+          "26 USC \u00a72(a)",
+          "26 USC \u00a768(b)"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(e)",
+          "26 USC \u00a72(a)"
+        ]
+      },
+      "scoring": {
+        "earned": 0.875,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=entailment; answer_correct=True; citation_precision=0.50",
+        "predicted_label": "entailment",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151",
+          "26 USC \u00a7151(c)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(3)(A)",
+          "26 USC \u00a7151(d)(3)(A)(B)",
+          "26 USC \u00a7151(d)(3)(B)",
+          "26 USC \u00a7151(e)",
+          "26 USC \u00a72(a)",
+          "26 USC \u00a768(b)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(c)",
+          "26 usc \u00a7151(d)(3)(a)",
+          "26 usc \u00a7151(d)(3)(b)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.3333,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 3,
+        "n_cited_refs": 9,
+        "n_correct_cited_refs": 3,
+        "n_cited_refs_normalized": 6,
+        "citation_correct": true,
+        "rouge1": 0.0017,
+        "rouge2": 0.0,
+        "rougeL": 0.0017
+      }
+    },
+    {
+      "id": "s151_d_5_neg",
+      "question": "The exemption amount of Alice's exemption is equal to $2000 under section 151(d)(5)?",
+      "rubric": "Contradiction",
+      "response": "Based on the SARA structured facts and provided statute excerpts, here is the step-by-step reasoning:\n\n1.  **Analyze the Fact**: The text explicitly states, \"Alice is entitled to an exemption under section 151(b) for the year 2018.\"\n2.  **Analyze the Question**: The question asks if the exemption amount is equal to $2,000 under section 151(d)(5).\n3.  **Retrieve Legal Rules**:\n    *   **[26 USC \u00a7151(d)(5)]:** This section provides special rules for taxable years beginning after December 31, 2017, and before January 1, 2026. Specifically, Subparagraph (A) states that \"The term 'exemption amount' means **zero**.\"\n4.  **Determine Entailment**: Since the law (Section 151(d)(5)) defines the exemption amount for the relevant tax year (2018) as zero, and the fact states Alice is entitled to an exemption under Section 151(b) (which applies in this year), the amount cannot be $2,000. Therefore, the statement in the question is false.\n5.  **Map to Label**: False maps to \"Contradiction\".\n\nContradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7151(d)",
+        "26 USC \u00a7151(c)",
+        "26 USC \u00a7151(a)",
+        "26 USC \u00a7151(b)",
+        "26 USC \u00a7151(e)",
+        "IRS Pub. 501: p007 s04 joint return:",
+        "IRS Pub. 501: p011 s02 exemptions you may be able to take:",
+        "IRS Pub. 501: p011 s04 CAUTION",
+        "SARA Source: 26 USC \u00a763",
+        "26 USC \u00a72(a)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.875,
+        "mrr": 0.75,
+        "recall_at_k_exact": 0.5,
+        "mrr_exact": 0.25,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 1,
+        "citation_precision": 0.5,
+        "citation_coverage": 0.5,
         "citation_sentences": 4,
-        "grounded_sentences": 1,
-        "grounding_rate": 0.25,
+        "grounded_sentences": 2,
+        "grounding_rate": 0.5,
         "citations": [
           "26 USC \u00a7151(b)",
-          "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(d)(2)"
+          "26 USC \u00a7151(d)(5)"
         ],
         "supported_citations": [
           "26 USC \u00a7151(b)"
+        ]
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)(5)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(5)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 1.0,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 2,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0123,
+        "rouge2": 0.0,
+        "rougeL": 0.0123
+      }
+    },
+    {
+      "id": "s151_d_5_pos",
+      "question": "The exemption amount of Alice's exemption is equal to $0 under section 151(d)(5)?",
+      "rubric": "Entailment",
+      "response": "### Reasoning\n\n1.  **Identify the Status of the Taxpayer**: The provided facts state that the statute `s151_b_applies(\"Alice\",2018)` is true. In the context of Section 151(b), this indicates that Alice is a spouse qualifying for the \"spouse\" deduction.\n\n2.  **Locate the Rule for Exemption Amount for Spouses**:\n    *   According to **26 USC \u00a7151(d)(1)**, the standard \"exemption amount\" is $2,000.\n    *   According to **26 USC \u00a7151(d)(5)**, which is the \"Special rules for taxable years 2018 through 2025\", the exemption amount for any taxable year beginning after December 31, 2017, and before January 1, 2026, means **zero**.\n\n3.  **Analyze the Conflict**:\n    *   **26 USC \u00a7151(b)** specifies that for a spouse, the \"amount of the exemption\" under \u00a7151(b) is computed as 50 percent of the amount of the exemption for a dependent. This implies a non-zero amount (e.g., $1,000).\n    *   **26 USC \u00a7151(d)(5)** specifically mandates that the \"term 'exemption amount' means zero\" for the taxable year 2018.\n\n4.  **Determine the Effective Statute**:\n    *   The prompt provides the question: \"The exemption amount of Alice's exemption is equal to $0 under section 151(d)(5)?\"\n    *   The facts state Alice is eligible for the deduction under \u00a7151(b) for 2018.\n    *   The facts *allow* us to apply \u00a7151(b) rules (implied by the facts stating she is entitled under \u00a7151(b)).\n    *   However, the specific instruction regarding the date range (2018-2025) overrides the general \u00a7151(d) definition with a mandatory zero.\n    *   The law explicitly states: \"(B) References For purposes of any other provision of this title, the reduction of the exemption amount to zero under subparagraph (A) shall not be taken into account in determining whether a deduction is allowed...\". This confirms that the zero amount is the definitive amount for this period, even if \u00a7151(b) mathematically suggests a calculation based on dependents' exemptions.\n    *   Therefore, under the specific provision (\u00a7151(d)(5)) applicable to her situation in 2018, the amount is $0.\n\n5.  **Conclusion**: The facts establish that Alice's exemption amount for 2018 is governed by the special rules for that year, which state the amount is zero. Thus, the statement \"The exemption amount of Alice's exemption is equal to $0 under section 151(d)(5)\" is true.\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7151(d)",
+        "26 USC \u00a7151(c)",
+        "26 USC \u00a7151(a)",
+        "26 USC \u00a7151(b)",
+        "26 USC \u00a7151(e)",
+        "IRS Pub. 501: p007 s04 joint return:",
+        "IRS Pub. 501: p011 s02 exemptions you may be able to take:",
+        "IRS Pub. 501: p011 s04 CAUTION",
+        "SARA Source: 26 USC \u00a763",
+        "26 USC \u00a72(a)"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.875,
+        "mrr": 0.75,
+        "recall_at_k_exact": 0.5,
+        "mrr_exact": 0.25,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 4,
+        "n_supported_citations": 2,
+        "citation_precision": 0.5,
+        "citation_coverage": 0.5,
+        "citation_sentences": 11,
+        "grounded_sentences": 6,
+        "grounding_rate": 0.5455,
+        "citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(5)"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)"
+        ]
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=entailment; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "entailment",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(b)",
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7151(d)(1)",
+          "26 USC \u00a7151(d)(5)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(b)",
+          "26 usc \u00a7151(d)(5)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 4,
+        "n_correct_cited_refs": 2,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0053,
+        "rouge2": 0.0,
+        "rougeL": 0.0053
+      }
+    },
+    {
+      "id": "s152_a_neg",
+      "question": "Under section 152(a), Bob is a dependent of Alice for the year 2014?",
+      "rubric": "Contradiction",
+      "response": "### Step-by-Step Reasoning\n\n1.  **Identify the Claim**: The question asks whether Bob is a \"dependent\" of Alice for the year 2014 under **section 152(a)**.\n    *   Section 152(a) defines \"dependent\" as either a **qualifying child** or a **qualifying relative**.\n    *   Therefore, to prove the claim (Entailment), we must first prove Bob is a \"qualifying child\" of Alice (as stated in the facts). If Bob were a \"qualifying relative\" instead, the answer would be Contradiction.\n\n2.  **Analyze the Provided Facts**:\n    *   `s152_c_1(\"Bob\", \"Charlie\", 2014).`\n    *   The fact states: \"Bob is a qualifying child of Charlie for the year 2014 under section 152(c)(1).\"\n    *   The relationship specified in the fact is between **Bob** and **Charlie**.\n    *   The relationship is explicitly identified as `brother_` (Bob is Bob's brother; the relationship is brotherhood).\n\n3.  **Apply Section 152(c)(1)**:\n    *   **Rule**: A \"qualifying child\" bears a relationship to the taxpayer if such individual is a **child** of the taxpayer or a **descendant** of such a child.\n    *   **Fact Application**: Bob is a child of Charlie.\n    *   **Conclusion**: Therefore, Bob *could* be a qualifying child of Charlie. The question asks if he is a dependent of **Alice**.\n\n4.  **Evaluate the Specific Relationship (Alice vs. Bob)**:\n    *   **Fact**: Alice is Bob's **sister** (`brother_(span(\"brother\",12,18), span(\"Bob\",21,23))`).\n    *   **Rule**: A \"child\" of the taxpayer must be the taxpayer's own child or a child of a child. A child's sibling is not the taxpayer's own child.\n    *   **Rule**: For the purpose of the \"child\" definition in section 152(c), a child must have the taxpayer as a parent or grandparent. Bob is not Alice's child.\n    *   **Rule**: Therefore, Bob does **not** bear a relationship to Alice under section 152(c) (child relationship).\n    *   **Conclusion**: Bob is **not** a qualifying child of Alice under section 152(c).\n\n5.  **Evaluate the \"Qualifying Relative\" Status (Alice vs. Bob)**:\n    *   For a person to be a qualifying relative of Alice, they must satisfy specific relationship criteria defined in section 152(d)(2).\n    *   **Check Section 152(d)(2) list for \"Alice\"**: The list includes children/daughters, brothers/sisters (of the taxpayer), parents/fathers/mothers, step-parents, etc.\n    *   **Fact Relevance**: The facts provided establish Bob's status with Charlie, not Alice. The facts do not state Alice's relationship to Bob (e.g., is Bob Alice's brother? Alice's child? Spouse?).\n    *   **Logic**: Without facts establishing that Bob is an eligible relative of Alice (e.g., Alice's brother, or Alice's child's sibling), we cannot determine if Bob qualifies as a relative of Alice. Even if we assume Bob is Alice's sibling (which contradicts the text saying Alice is Bob's sister), that would make Bob Alice's *nephew* (child of brother), which falls under **152(d)(2)(E)** (son or daughter of a brother or sister).\n    *   **However**: The prompt asks if Bob is a dependent of Alice *based on the text*. The text explicitly says Alice is Bob's **sister**.\n        *   Is Bob Alice's child? No.\n        *   Is Bob Alice's brother? No (Alice is Bob's sister).\n        *   Is Bob Alice's sibling (i.e., Alice's brother)? The text does not say Alice is Bob's sister-in-law; it says Alice is Bob's sister. Thus, Alice and Bob are siblings of each other, making Bob the **nephew** of Alice.\n    *   **Definition Check (152(d)(2)(E))**: A child of a brother or sister of the taxpayer.\n        *   Taxpayer = Alice.\n        *   Alice's brother = Bob.\n        *   Bob's child = Alice's nephew.\n        *   Does Bob fit the description \"child of a brother or sister of the taxpayer\"? No, Bob is the brother/sister himself. A nephew is not a nephew of the taxpayer.\n    *   **Definition Check (152(d)(1) General Rule)**: A \"qualifying relative\" must bear a relationship to the taxpayer described in 152(d)(2). Since Bob is Alice's nephew and not Alice's child, sibling, or parent/grandparent/step-relative as listed, Bob does not qualify as a qualifying relative of Alice.\n\n6.  **Synthesize Findings**:\n    *   Bob is a qualifying child of **Charlie**, not Alice.\n    *   Bob is Alice's nephew, not Alice's qualifying relative.\n    *   Section 152(a) requires Bob to be a qualifying child OR a qualifying relative of Alice.\n    *   Bob fails the qualifying child test for Alice.\n    *   Bob fails the qualifying relative test for Alice.\n    *   Therefore, Bob is **not** a dependent of Alice.\n\n7.  **Map to Labels**:\n    *   False -> Contradiction.\n\n### Final Label\n\nContradiction\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.875,
+        "mrr": 0.75,
+        "recall_at_k_exact": 0.5,
+        "mrr_exact": 0.3333,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 4,
+        "n_supported_citations": 2,
+        "citation_precision": 0.5,
+        "citation_coverage": 0.5,
+        "citation_sentences": 10,
+        "grounded_sentences": 6,
+        "grounding_rate": 0.6,
+        "citations": [
+          "26 USC \u00a7152(a)",
+          "26 USC \u00a7152(c)",
+          "26 USC \u00a7152(c)(1)",
+          "26 USC \u00a7152(d)(2)"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7152(a)",
+          "26 USC \u00a7152(c)"
+        ]
+      },
+      "scoring": {
+        "earned": 0.9167,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.67",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(a)",
+          "26 USC \u00a7152(c)",
+          "26 USC \u00a7152(c)(1)",
+          "26 USC \u00a7152(d)(2)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(a)",
+          "26 usc \u00a7152(c)(1)"
+        ],
+        "citation_fact_precision": 0.6667,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 4,
+        "n_correct_cited_refs": 2,
+        "n_cited_refs_normalized": 3,
+        "citation_correct": true,
+        "rouge1": 0.0027,
+        "rouge2": 0.0,
+        "rougeL": 0.0027
+      }
+    },
+    {
+      "id": "s152_a_pos",
+      "question": "Under section 152(a), Bob is a dependent of Alice for the year 2015?",
+      "rubric": "Entailment",
+      "response": "Step 1: Analyze the legal definition of a dependent under \u00a7152(a).\nSection 26 USC \u00a7152(a)(1) defines \"dependent\" to include \"a qualifying child\".\n\nStep 2: Analyze the facts provided regarding Bob and Alice for the year 2015.\nThe provided facts state: `son_(span(\"son\", 12, 14)).` and `agent_(span(\"son\", 12, 14), span(\"Bob\", 17, 19)).`\nAdditionally, the text explicitly states: `Alice has a son, Bob, who satisfies section 152(c)(1) for the year 2015.`\nIn the tax context, the condition \"satisfies section 152(c)(1)\" means that all the requirements for a qualifying child are met. The facts establish that the taxpayer Alice claims Bob as her dependent under this specific statute.\n\nStep 3: Apply the definition to the facts.\nSince Bob satisfies the conditions defined in \u00a7152(c)(1), he is a qualifying child. Since qualifying children are \"dependents\" under \u00a7152(a)(1), Bob is a dependent of Alice.\n\nStep 4: Determine the entailment relationship.\nThe fact provided explicitly states Bob satisfies \u00a7152(c)(1). Since satisfying \u00a7152(c)(1) leads to a conclusion of being a dependent under \u00a7152(a), the statement \"Bob is a dependent of Alice for the year 2015\" is logically true based on the premises.\nTherefore, the relationship is Entailment.\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.875,
+        "mrr": 0.75,
+        "recall_at_k_exact": 0.5,
+        "mrr_exact": 0.5,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 4,
+        "n_supported_citations": 1,
+        "citation_precision": 0.25,
+        "citation_coverage": 0.25,
+        "citation_sentences": 7,
+        "grounded_sentences": 2,
+        "grounding_rate": 0.2857,
+        "citations": [
+          "26 USC \u00a7152(a)",
+          "26 USC \u00a7152(a)(1)",
+          "26 USC \u00a7152(c)(1)",
+          "26 USC \u00a726"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7152(a)"
         ]
       },
       "scoring": {
@@ -134,23 +644,879 @@
         "answer_correct": 1.0,
         "calculation_steps_present": null,
         "cited_refs": [
-          "26 USC \u00a7151(b)",
-          "26 USC \u00a7151(d)(1)",
-          "26 USC \u00a7151(d)(2)"
+          "26 USC \u00a7152(a)",
+          "26 USC \u00a7152(a)(1)",
+          "26 USC \u00a7152(c)(1)",
+          "26 USC \u00a726"
         ],
         "matched_refs": [
-          "26 usc \u00a7151(b)",
-          "26 usc \u00a7151(d)(1)"
+          "26 usc \u00a7152(a)",
+          "26 usc \u00a7152(c)(1)"
         ],
         "citation_fact_precision": 0.6667,
         "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
         "n_fact_refs": 2,
-        "n_cited_refs": 3,
+        "n_cited_refs": 4,
         "n_correct_cited_refs": 2,
+        "n_cited_refs_normalized": 3,
+        "citation_correct": true,
+        "rouge1": 0.0093,
+        "rouge2": 0.0,
+        "rougeL": 0.0093
+      }
+    },
+    {
+      "id": "s152_c_2_A_neg",
+      "question": "Bob bears a relationship to Alice under section 152(c)(2)(A)?",
+      "rubric": "Contradiction",
+      "response": "### Reasoning\n\n1.  **Identify the Question**: The question asks whether Bob bears a relationship to Alice under section 26 USC \u00a7152(c)(2)(A).\n\n2.  **Consult the Facts**:\n    *   The facts state: `agent_(span(\"brother\",12,18),span(\"Bob\",21,23))`. This establishes a relationship where Bob is related to \"brother\" (Alice's brother).\n    *   The facts state: `brother_(span(\"brother\",12,18))`. This establishes that Bob is Alice's brother.\n    *   The facts state: `start_(span(\"born\",34,37),span(20140131,39,56))`. This establishes a birth date, but this is not the primary determinant of the \"relationship\" clause in \u00a7152(c)(2)(A), which focuses on lineage (child/child/child, sibling/sibling).\n\n3.  **Analyze the Law (26 USC \u00a7152(c)(2)(A))**:\n    *   The text of the statute states: \"An individual bears a relationship to the taxpayer described in this paragraph if such individual is\u2014 **(A) a child of the taxpayer or a descendant of such a child**, **or** **(B) a brother, sister, stepbrother, or stepsister of the taxpayer or a descendant of any such relative**.\"\n    *   The \"Allowed section citations\" provided in the prompt are limited to `26 USC \u00a7152(c)(2)(A)`.\n    *   While the relationship \"brother\" is explicitly mentioned in the *text* of the statute provided in the prompt's citation list, the *facts* do not specify the specific year Alice's relationship with her brother Bob.\n    *   However, in tax law QA tasks of this type (like Tax-205), we look for if the provided facts logically force the law to apply or contradict.\n    *   The facts confirm Bob is Alice's brother. The law defines \"brother\" as a qualifying relationship.\n    *   Therefore, the facts are consistent with the legal definition provided in the statute text.\n\n4.  **Evaluate Entailment**:\n    *   Fact: Bob is Alice's brother.\n    *   Law: \u00a7152(c)(2)(A) includes \"brother\" as a qualifying relationship.\n    *   Logic: If Bob is Alice's brother, he bears that relationship.\n    *   Result: The truth of the relationship is confirmed by the combination of the facts and the definition of the relationship provided in the statute text found in the citations.\n\n5.  **Final Conclusion**: The provided facts (Bob is Alice's brother) are consistent with and entail the statement that Bob bears a relationship to Alice under the statutory definition of \"brother\" found in \u00a7152(c)(2)(A).\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.25,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 5,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(c)(2)(A)",
+          "26 USC \u00a726"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.125,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=entailment; answer_correct=False; citation_precision=0.50",
+        "predicted_label": "entailment",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(c)(2)(A)",
+          "26 USC \u00a726"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(c)(2)(a)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0052,
+        "rouge2": 0.0,
+        "rougeL": 0.0052
+      }
+    },
+    {
+      "id": "s152_c_2_A_pos",
+      "question": "Bob bears a relationship to Alice under section 152(c)(2)(A)?",
+      "rubric": "Entailment",
+      "response": "Based on the provided text and statutes:\n\n1.  **Fact**: The text states that Bob is Alice's **son** (born January 31st, 2014).\n2.  **Legal Rule**: Section 26 USC \u00a7152(c)(2)(A) explicitly defines the relationship for a **qualifying child** as \"a **child of the taxpayer** or a **descendant of such a child**\".\n3.  **Application**: Since Bob is Alice's child (a \"child of the taxpayer\" relationship), Bob satisfies the relationship requirement specified in \u00a7152(c)(2)(A).\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.25,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 2,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(c)(2)(A)",
+          "26 USC \u00a726"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.875,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=entailment; answer_correct=True; citation_precision=0.50",
+        "predicted_label": "entailment",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(c)(2)(A)",
+          "26 USC \u00a726"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(c)(2)(a)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0244,
+        "rouge2": 0.0,
+        "rougeL": 0.0244
+      }
+    },
+    {
+      "id": "s152_d_1_D_neg",
+      "question": "Section 152(d)(1)(D) applies to Bob for the year 2015?",
+      "rubric": "Contradiction",
+      "response": "Based on the text provided and the allowed citations, here is the step-by-step logical deduction:\n\n1.  **Identify the Status of Bob**: The text explicitly states, \"Alice is Bob's mother, and Bob is a dependent of Alice under 152(c) for the year 2015.\"\n2.  **Apply the Statutory Rule**:\n    *   Section 152(c) of the Internal Revenue Code generally states that a \"child\" is a dependent if the test of dependency is met.\n    *   The text does not mention any other specific test for dependency other than the one referenced in 152(c).\n    *   While 26 USC \u00a7152(d) often provides further rules (such as those related to the \"grandparent\" rule in \u00a7152(e) or the exclusion of dependent's own support needs, or specific \"grandchild\" rules), the text provided does not explicitly grant Alice's status as a mother of Bob the status of a *grandchild* for the purpose of \u00a7152(d)(1)(D).\n    *   However, looking strictly at the provided **allowed citations**: The prompt lists `26 USC \u00a7151(d), 26 USC \u00a7152(d)(1)(D)`.\n    *   Section 151(d) defines the exemption amount for a dependent.\n    *   Section 152(d) contains the \"Grandchildren\" exception. It allows a person to be a dependent of their child (if the child is not a qualifying person) or of the parent's child, *provided specific conditions* are met (e.g., the person is not a resident, the parent is not a student, etc.).\n    *   **Crucially**, the text does not state that the specific conditions of \u00a7152(d) are met. Without the text stating the conditions of \u00a7152(d) are satisfied (e.g., Alice is not a student, Bob is not a resident of another household), we cannot legally infer under the cited law that Bob qualifies under \u00a7152(d)(1)(D).\n    *   Wait, let's re-evaluate the logic based on standard entailment tasks. Usually, in these specific datasets (like TaxNLI), if the text confirms a fact (Bob is a dependent under 152(c)) and asks if a specific rule (152(d)(1)(D)) applies, the answer depends on whether the text implies the conditions are met OR if the text is simply insufficient.\n    *   Let's look at the specific phrasing of \u00a7152(d)(1)(D). It allows the exclusion of the parent's own support cost. This is a *special rule* for children. Does a mother-child relationship trigger this automatically? No.\n    *   However, often in these specific NLI setups, the presence of 152(c) establishing dependency is the primary trigger for testing the broader family relationship rules under 152(d). BUT, 152(d) generally applies to children and grandchildren. A relationship where the mother is the child does NOT satisfy the \"grandchild\" test (she must be the parent's child).\n    *   Is the question asking if the *statute* applies (i.e., is it *possible*)? Or is it asking if the specific facts lead to the conclusion that Bob *is* covered?\n    *   The prompt asks: \"Section 152(d)(1)(D) applies to Bob...\"\n    *   If Bob is a child of Alice (152(c)), he is the \"parent's child\". The rule in 152(d)(1)(D) applies to \"children\" or \"grandchildren\". It does not apply to the *parent's children*. The parent's children are covered by 152(a) (standard dependency) and/or 152(b) (dependent).\n    *   Therefore, the condition for \u00a7152(d)(1)(D) is *not* met by a relationship of a mother-to-son/dad.\n    *   Conclusion: The specific statute \u00a7152(d)(1)(D) does not apply to this relationship based on general tax law rules not explicitly detailed in the snippet but inherent in the statute structure, or simply because the facts (mother's child) don't fit the statutory definition required for that exception (which usually requires the other party to be the \"grandchild\" of the taxpayer, which Alice, in this case, is the parent's child of Bob? No, Alice is the parent of Bob. So Alice is the \"grandparent\" to Bob? No, Alice is the parent).\n    *   Actually, let's map it carefully:\n        *   Taxpayer: Alice.\n        *   Dependent: Bob.\n        *   Relationship: Mother (Alice) -> Child (Bob).\n        *   Statutory Question: Does \u00a7152(d)(1)(D) apply?\n    *   \u00a7152(d)(1)(D) allows exclusion of a taxpayer's own support cost for their \"child\" or \"grandchild\".\n    *   If Bob is a child of Alice, Alice is the *parent* of Bob. This does not fit the \"grandchild\" relationship (where the taxpayer is the grandchild).\n    *   If Alice is the taxpayer, and Bob is her child, the exception generally doesn't apply (unless she is the grandchild, which she isn't).\n    *   Since the facts do not support the application of the rule (and tax rules do not automatically apply this rule to a parent-child relationship where the parent is the taxpayer), the statement that the rule \"applies\" is False.\n\n    *Let's reconsider the \"Entailment\" path.* Is the text strong enough?\n    The text says Bob is a dependent. It mentions \u00a7152(c). It asks about \u00a7152(d).\n    If the dataset implies that any dependent status triggers the broader family relationship analysis of 152(d), that would be an incorrect interpretation of tax law.\n    However, sometimes these datasets are noisy. But strictly, 152(d)(1)(D) is for Grandchildren. Alice (Mother) is not a Grandchild of Bob. Alice is Bob's Parent.\n    Therefore, the condition \"Alice is Bob's Grandchild\" (required for \u00a7152(d)(1)(D)) is False.\n    Thus, the section does not apply.\n\n    Wait, could the question be interpreted differently? \"Does the statute apply [to the relationship]\"? Yes. The relationship described is a parent-child. The statute is a Grandchild rule. They do not align.\n    Therefore, Contradiction.\n\n    Let's double check the allowed citations. The prompt allows `26 USC \u00a7152(d)(1)(D)`.\n    The logic holds: The text establishes Bob as Alice's child. Section 152(d)(1)(D) provides an exception for a person's own support needs for a *grandchild* (if the grandchild is a dependent). Since Alice is Bob's parent and not Bob's grandchild, this specific exception does not apply.\n\n    Final check:\n    Fact: Alice is Bob's mother.\n    Fact: Bob is a dependent under 152(c).\n    Question: Does 152(d)(1)(D) apply?\n    Legal Analysis: 152(d)(1)(D) applies if the individual (Alice in this case) is the parent's child of the dependent (Bob)? No. It applies if Alice is the grandchild of Bob? Yes. Or if Bob is the child of Alice (which would make Bob the dependent's child, i.e., Alice is the grandmother).\n    Here, Alice is the *Parent* of Bob. She is not the *Grandchild* of Bob.\n    Therefore, the condition for \u00a7152(d)(1)(D) is not met.\n    Conclusion: Contradiction.\n\n    One nuance: In some simplified logic puzzles, if \"Dependent\" is the key tag, maybe the system expects \"Entailment\" if the dependent status is present? No, legal tax entailment requires strict statutory adherence. 152(d)(1)(D) is specific.\n    Also, note the citation `26 USC \u00a7152(d)(1)(D)` in the allowed list.\n    The relationship is Mother -> Child.\n    Statute: Grandchild rule.\n    Mismatch -> False -> Contradiction.\n\n    Step 1: Bob is a child of Alice (Mother).\n    Step 2: Section 152(d)(1)(D) applies to the taxpayer (Alice) and a *grandchild* (Bob).\n    Step 3: For this rule to apply, Alice must be Bob's grandchild.\n    Step 4: Alice is Bob's mother. Thus, Alice is Bob's parent, not grandchild.\n    Step 5: The condition is not met.\n    Step 6: The statement \"Section 152(d)(1)(D) applies to Bob\" is false.\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.25,
+        "mrr": 0.125,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 5,
+        "n_supported_citations": 3,
+        "citation_precision": 0.6,
+        "citation_coverage": 0.6,
+        "citation_sentences": 22,
+        "grounded_sentences": 7,
+        "grounding_rate": 0.3182,
+        "citations": [
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7152(c)",
+          "26 USC \u00a7152(d)",
+          "26 USC \u00a7152(d)(1)(D)",
+          "26 USC \u00a7152(e)"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7152(c)",
+          "26 USC \u00a7152(d)",
+          "26 USC \u00a7152(e)"
+        ]
+      },
+      "scoring": {
+        "earned": 0.875,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.50",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7151(d)",
+          "26 USC \u00a7152(c)",
+          "26 USC \u00a7152(d)",
+          "26 USC \u00a7152(d)(1)(D)",
+          "26 USC \u00a7152(e)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7151(d)",
+          "26 usc \u00a7152(d)(1)(d)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.4,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 2,
+        "n_cited_refs": 5,
+        "n_correct_cited_refs": 2,
+        "n_cited_refs_normalized": 4,
+        "citation_correct": true,
+        "rouge1": 0.0016,
+        "rouge2": 0.0,
+        "rougeL": 0.0016
+      }
+    },
+    {
+      "id": "s152_d_1_D_pos",
+      "question": "Section 152(d)(1)(D) applies to Bob for the year 2015?",
+      "rubric": "Entailment",
+      "response": "",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [],
+      "n_chunks": 0,
+      "retrieval_metrics": {},
+      "citation_metrics": {},
+      "scoring": {
+        "earned": null,
+        "total": null,
+        "feedback": "Case failed: Ollama request timed out. Model=qwen3.5:2b, timeout=340s, retries=3. Try increasing OLLAMA_TIMEOUT_SECONDS, reducing --limit, or using a smaller model.",
+        "_case_error": true
+      },
+      "error": "Ollama request timed out. Model=qwen3.5:2b, timeout=340s, retries=3. Try increasing OLLAMA_TIMEOUT_SECONDS, reducing --limit, or using a smaller model."
+    },
+    {
+      "id": "s152_d_2_A_neg",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(A)?",
+      "rubric": "Contradiction",
+      "response": "To determine if Bob is a qualifying relative of Alice under Section 152(d)(2)(A), we must analyze the specific relationship listed in that clause.\n\n**Step 1: Identify the relevant statutory language.**\nSection 26 USC \u00a7152(d)(2)(A) lists the relationships between a qualifying relative (the taxpayer) and another individual (the dependent).\nThe text of \u00a7152(d)(2)(A) states: \"...an individual bears a relationship to the taxpayer if the individual is **any of the following with respect to the taxpayer:** (A) A child or a descendant of a child.\"\n\n**Step 2: Compare the statutory rule with the factual situation.**\n*   **Fact:** Bob is Alice's brother (specifically, Bob is Alice's brother since April 15th, 2014).\n*   **Rule:** The statute requires Bob to be Alice's **child** or **descendant of a child**.\n*   **Analysis:** Bob's relationship to Alice is defined by marriage (or potentially adoption at the time of marriage), not by blood relations or adoption as a parent/child. Bob is not Alice's child or descendant of a child. While Bob is an \"older brother\" to Alice, he is not an \"adult child\" to Alice (unless adopted, which is not stated). The relationship of being an \"older brother\" falls under \u00a7152(d)(2)(A)(E) (son/daughter of a brother/sister of the taxpayer), but not \u00a7152(d)(2)(A)(A).\n\n**Step 3: Determine the entailment.**\nSince the required condition in \u00a7152(d)(2)(A) is not met, Alice does not bear a relationship to Bob that qualifies him as a qualifying relative under that specific clause. Therefore, Bob is not Alice's qualifying child under \u00a7152.\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 5,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 6,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152",
+          "26 USC \u00a7152(d)(2)(A)",
+          "26 USC \u00a7152(d)(2)(A)(A)",
+          "26 USC \u00a7152(d)(2)(A)(E)",
+          "26 USC \u00a726"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.875,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.50",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152",
+          "26 USC \u00a7152(d)(2)(A)",
+          "26 USC \u00a7152(d)(2)(A)(A)",
+          "26 USC \u00a7152(d)(2)(A)(E)",
+          "26 USC \u00a726"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(a)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.2,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 5,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0073,
+        "rouge2": 0.0,
+        "rougeL": 0.0073
+      }
+    },
+    {
+      "id": "s152_d_2_A_pos",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(A)?",
+      "rubric": "Entailment",
+      "response": "Based on the provided facts and the specific relationship definitions in the statute excerpt, here is the step-by-step analysis:\n\n**Step 1: Identify the relevant statutory provision.**\nThe question asks about Section 152(d)(2)(A), which pertains to \"child\" relationships (or descendants of a child) as a qualifying relative for a taxpayer.\n\n**Step 2: Analyze the provided facts regarding the relationship.**\nThe facts state: `start_(span(\"father\",15,20),span(20140415,28,43))`.\n*   `span(\"father\",15,20)`: Defines Bob as the father of Alice (Alice is the patient).\n*   `span(20140415,28,43)`: Defines a relationship between Bob and Alice. Specifically, the relationship \"father\" is present from April 15, 2014, for 28 consecutive days.\n\nThis confirms that Alice is a child of Bob as of the tax year in question.\n\n**Step 3: Evaluate the condition under 26 USC \u00a7152(d)(2)(A).**\n26 USC \u00a7152(d)(2)(A) states: \"An individual bears a relationship to the taxpayer described in this paragraph if the individual is any of the following with respect to the taxpayer: (A) A child or a descendant of a child.\"\n\n*   We have established from the facts that Alice is a child of Bob.\n*   Therefore, Alice fits the description of \"a child of the taxpayer\" (where the taxpayer is Bob).\n*   Note: While this is technically a direct child relationship rather than \"descendant of a child,\" the definition explicitly includes \"a child\" as a valid qualifying relative status for purposes of this section. A parent is not a qualifying relative of another parent under \u00a7152(d)(2). However, the question asks if Alice bears a relationship to Bob *under section 152(d)(2)(A)*. Since Alice is Bob's child, this specific clause applies.\n\n**Step 4: Verify if the specific statute text overrides or clarifies the \"child\" vs \"descendant\" distinction.**\nThe statute text provided (`26 USC \u00a7152(d)(2)`) lists \"child\" and \"descendant of a child\" separately. The facts confirm Alice is a \"child\". Thus, the condition is met directly under clause (A).\n\n**Conclusion:**\nSince Alice is Bob's child (established by the fact pattern), she bears a relationship to Bob under the provision of 26 USC \u00a7152(d)(2)(A).\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 6,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(d)(2)",
+          "26 USC \u00a7152(d)(2)(A)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=entailment; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "entailment",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(d)(2)",
+          "26 USC \u00a7152(d)(2)(A)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(a)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 1,
+        "citation_correct": true,
+        "rouge1": 0.0054,
+        "rouge2": 0.0,
+        "rougeL": 0.0054
+      }
+    },
+    {
+      "id": "s152_d_2_C_neg",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(C)?",
+      "rubric": "Contradiction",
+      "response": "Based on the provided facts and the specific statute citation (26 USC \u00a7152(d)(2)(C)), here is the step-by-step logical deduction:\n\n1.  **Analyze the Relationship Fact**: The facts state that Alice is the spouse of Charlie. Specifically, the `marriage` fact links the agent \"Alice\" with the agent \"Charlie\" via the span \"married\". The `father_(span(\"father\",17,22)).` fact identifies Charlie as Bob's father.\n2.  **Identify the Legal Rule**: The citation `26 USC \u00a7152(d)(2)(C)` defines the term \"husband or wife\". Under this statute, the term \"husband or wife\" means \"a person whose spouse is a person described in subsection (d)(2)(A)\" or subsection (d)(2)(B).\n3.  **Determine the Condition**: To bear a relationship to Bob under \u00a7152(d)(2)(C) as a \"husband or wife\", the taxpayer must have a spouse. In this case, Alice's spouse is Charlie. Since Charlie is Bob's father (established by the `father` fact), Alice's spouse has a relationship to Bob.\n4.  **Evaluate Entailment**: Because Alice has a spouse (Charlie), and the statute defines \"husband or wife\" to include those whose spouses have a relationship to the taxpayer, Alice is legally considered a \"husband or wife\" relative to Bob. Therefore, the fact provided (Alice is married to Bob's father) entails that Alice bears a relationship to Bob under that specific statutory definition.\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(f)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(e)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.1,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 1,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 3,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(d)(2)(C)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.25,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=entailment; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "entailment",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(d)(2)(C)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(c)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 1.0,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 1,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 1,
         "citation_correct": true,
         "rouge1": 0.0,
         "rouge2": 0.0,
         "rougeL": 0.0
+      }
+    },
+    {
+      "id": "s152_d_2_C_pos",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(C)?",
+      "rubric": "Entailment",
+      "response": "To determine whether Alice bears a relationship to Bob under 26 USC \u00a7152(d)(2)(C), we must analyze the provided facts against the statutory language of that specific section.\n\n**Step 1: Identify the Relevant Statutory Language**\nWe examine **26 USC \u00a7152(d)(2)(C)**. This subsection lists specific individuals who bear a relationship to the taxpayer. It reads:\n\"An individual bears a relationship to the taxpayer described in this paragraph if the individual is... (C) The father or mother, or an ancestor of either.\"\n\n*Note: The full text includes additional relationships (Stepfather/Stepmother, Son/Daughter of Brother/Sister, etc.). However, we must check if Alice fits **any** of these categories.*\n\n**Step 2: Analyze the Facts**\nThe facts state:\n*   \"Bob is Alice's son since April 15th, 2014.\"\n\nThis establishes a parent-child relationship where Bob is the child (son) and Alice is the parent (mother).\n\n**Step 3: Compare Fact against Statute**\nDoes the relationship \"Alice is the father or mother of Bob\" fit the statutory criterion?\n*   **Statutory Criterion:** \"Father or mother\" (meaning one is the parent and the other is the child).\n*   **Fact:** Alice is the mother and Bob is the son.\n\nSince Alice is the mother of Bob, the condition \"Alice is the father or mother of Bob\" is **True**.\n\n**Conclusion**\nSince the relationship established between Alice and Bob under the facts (mother-child) satisfies one of the conditions listed in section 152(d)(2)(C) (being the mother), it is legally established that Alice bears a relationship to Bob under that section.\n\nFinal Answer: Entailment",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 1,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 3,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(d)(2)(C)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=entailment; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "entailment",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(d)(2)(C)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(c)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 1.0,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 1,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 1,
+        "citation_correct": true,
+        "rouge1": 0.0077,
+        "rouge2": 0.0,
+        "rougeL": 0.0077
+      }
+    },
+    {
+      "id": "s152_d_2_G_neg",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(G) for the year 2018?",
+      "rubric": "Contradiction",
+      "response": "### Reasoning Process\n\n1.  **Identify the Question and Required Legal Standard**:\n    *   **Question**: Does Alice bear a relationship to Bob under **26 USC \u00a7152(d)(2)(G)** for the year **2018**?\n    *   **Required Rule**: **26 USC \u00a7152(d)(2)(G)** explicitly states that for purposes of this section, an individual bears a relationship to the taxpayer if... \"(G) An individual (other than an individual who at any time during the taxable year was the spouse... of the taxpayer) who, for the taxable year of the taxpayer, has the same principal place of abode as the taxpayer and is a member of the taxpayer's household.\"\n\n2.  **Analyze the Fact Pattern**:\n    *   **Timeframe**: The relationship exists for the **taxable year beginning in 2014** (Alice and Bob started living together on April 15th, **2014**).\n    *   **Current Taxable Year**: The question asks about the status for the year **2018**.\n    *   **Relationship Status**: Alice and Bob are \"not related\" according to the facts.\n    *   **Spousal Exclusion Clause**: The statute (G) explicitly excludes the taxpayer's spouse. Alice and Bob are not spouses.\n    *   **Residence Requirement**: The facts state they \"started living together on April 15th, 2014.\" However, to qualify under \u00a7152(d)(2)(G) for a specific *taxable year* (like 2018), they must have been members of a household *for that taxable year*. The facts only establish they lived together starting in 2014. For the specific taxable year of 2018, there is no information indicating they maintained that residence during 2018. Furthermore, even if we assume they lived together in 2018 (which is a gap in the provided facts, not a contradiction of \"not related\"), the core disqualifier in the case facts is the **relationship status** and the **spousal exclusion** regarding their current legal status.\n\n3.  **Evaluate the Specific Statute (26 USC \u00a7152(d)(2)(G))**:\n    *   The prompt asks specifically if they bear a relationship **under section 152(d)(2)(G)**.\n    *   The facts state they are **not related**.\n    *   The statute requires the relationship to be present for the taxable year.\n    *   Crucially, the statute includes an exemption for **spouses**. Since Alice and Bob are not spouses, this does not automatically apply unless they qualify under residence rules. Even if they resided together in 2018 (which is not explicitly stated as continuous residence starting from the initial fact, only a start in 2014), the primary reason for the lack of relationship is the fact that they are not related and are not spouses.\n    *   *Self-Correction/Refinement*: The question asks if they *bear a relationship* under that specific code. The facts explicitly say \"Alice and Bob are not related\". Section 152(d)(2) sets out the relationships (A through H). \"Not related\" directly contradicts \"A child or descendant of a child\" (A), \"B and G\", \"C\" etc. The residence rule in (G) is irrelevant if the relationship does not exist.\n    *   Additionally, the text says they \"started living together on April 15th, 2014.\" For a taxable year of **2018**, we must look at whether they were members of the household *for that year*. The provided facts do not confirm continuous residence through 2018, only a starting point in 2014. Even if they lived together in 2018, the fact that they are not related is the definitive negative.\n    *   However, the most direct contradiction is the explicit statement \"Alice and Bob are not related\" versus the definition of relationship in \u00a7152(d)(2).\n    *   Let's look at the exclusion in (G): \"An individual (other than... spouse)... is a member of the taxpayer's household.\" If they lived together in 2018, they would be a member of the household, and being a single adult (not listed as an exception in (G) like children of a child, though (G) says \"An individual... who is not a qualifying child...\"), the relationship in (G) is defined by residence. But the facts say they are \"not related\". This is a direct factual negation of the relationship condition required by the statute.\n    *   Actually, strictly speaking, under \u00a7152(d)(2), the relationships listed are exhaustive. If they are not listed (not related), they do not bear a relationship.\n    *   The facts say they are \"not related\". Therefore, they do not bear a relationship.\n    *   The question asks: \"Does Alice bear a relationship to Bob under... 26 USC \u00a7152(d)(2)(G)?\"\n    *   Since the facts state they are \"not related\", the answer is No.\n    *   Does the \"started living together\" part make them liable for 2018? The facts only confirm the start date. They could not have lived together continuously *in 2018* based on the available text (only 2014 is mentioned). Even if they did, the fact that they are \"not related\" is the deciding factor against a finding of a legal relationship under \u00a7152.\n\n4.  **Conclusion**:\n    *   The facts explicitly state Alice and Bob are **not related**.\n    *   Section 152(d)(2)(G) requires a relationship for an individual to qualify.\n    *   Therefore, they do not bear a relationship.\n    *   Result: Contradiction.\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(f)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(e)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 3,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 10,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152",
+          "26 USC \u00a7152(d)(2)",
+          "26 USC \u00a7152(d)(2)(G)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 1.0,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=1.00",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152",
+          "26 USC \u00a7152(d)(2)",
+          "26 USC \u00a7152(d)(2)(G)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(g)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.3333,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 3,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 1,
+        "citation_correct": true,
+        "rouge1": 0.0025,
+        "rouge2": 0.0,
+        "rougeL": 0.0025
+      }
+    },
+    {
+      "id": "s152_d_2_G_pos",
+      "question": "Alice bears a relationship to Charlie under section 152(d)(2)(G) for the year 2018?",
+      "rubric": "Entailment",
+      "response": "### Reasoning Process\n\n1.  **Analyze the Request**:\n    *   **Task**: Determine if Alice bears a relationship to Charlie under IRC \u00a7152(d)(2)(G) for the tax year 2018.\n    *   **Input Facts**:\n        *   Charlie is Bob's father (Relationship between characters: Alice $\\neq$ Bob).\n        *   Alice and Bob were married on October 12, 1992.\n        *   Charlie's relationship with Bob started on April 15, 2014.\n    *   **Allowed Citation**: 26 USC \u00a7152(d)(2)(G).\n    *   **Format Requirements**: Step-by-step calculation/derivation, final answer must be \"Entailment\" or \"Contradiction\", strict citation adherence.\n\n2.  **Analyze the Legal Rule **(26 USC \u00a7152(d)(2)(G))\n    *   The provision defines \"Dependent\" for the purpose of tax credits.\n    *   The key statutory language for a dependent parent is found in **26 USC \u00a7152(d)(2)(G)** (specifically the definition of \"child\" in subsection (A) which lists \"parent\" as a type of relative).\n    *   However, \u00a7152(d)(2)(G) itself establishes the *relationship* categories for determining eligibility for certain credits (like the credit for children and dependent relatives). It states that for the purposes of any provision involving a \"child\", a \"parent\" includes parents, and \"grandparents\" include grandparents, etc.\n    *   Crucially, for the purpose of defining who constitutes a \"dependent\" for a parent credit (or similar), a \"child\" is defined as an individual who is a resident of the parent's home and who does not have any other support.\n    *   The core question reduces to: Is Alice considered a \"child\" of Bob? Or is her connection to Bob via marriage irrelevant to her potential status as a dependent of Bob for a tax credit, but does the statute define a relationship between a grandparent and their spouse as a \"child\" or \"grandparent\" in a way that allows for inheritance or adoption in specific contexts?\n    *   Actually, let's look at the specific text of \u00a7152(d)(2)(G) regarding \"children\" and \"grandparents\". It explicitly lists \"parent\" and \"grandparent\" under the list of relatives who can receive credits if the person is a \"child\".\n    *   The critical issue for *Alice* (Bob's wife) bearing a relationship to *Charlie* (Bob's father) for a tax credit is whether Alice is considered a \"grandparent\" or \"child\" relative to Bob.\n    *   Standard tax law (and the specific text of \u00a7152(d)(2)(G)) does not list a spouse as a \"grandparent\" for the purpose of the \"grandparent credit\" (which generally covers a spouse in specific contexts but usually requires a \"grandparent\" relationship in the strict sense of being the parent of the parent).\n    *   Wait, let's re-read \u00a7152(d)(2)(G). It generally defines the relationship of **grandparent** for purposes of the credit.\n    *   Does Alice qualify? Alice is married to Bob. She is Bob's wife, not Bob's parent/grandparent in a lineage sense relevant to \u00a7152(d).\n    *   Wait, if the question asks if she bears a relationship under \u00a7152(d)(2)(G), it implies she falls into one of the categories (child, grandparent, etc.) mentioned in that section.\n    *   Under \u00a7152(d)(2)(G), the term \"grandparent\" refers to a parent of a parent. Alice is Bob's spouse. She is not Bob's parent. She is not a \"grandparent\".\n    *   Therefore, Alice does not fall under the statutory definition of a \"grandparent\" (or any other parent/grandchild relationship) in \u00a7152(d)(2)(G) for the purpose of the specific relationship defined therein (which typically links the beneficiary to the child of the parent).\n    *   Is there any scenario where Alice counts? No. A spouse is not a parent or grandparent.\n\n3.  **Verify with Facts**:\n    *   Alice and Bob are married (1992). This establishes Alice as Bob's spouse.\n    *   Charlie is Bob's father (post-2014).\n    *   The relationship between Alice and Charlie is husband/wife and son/dad, which is not defined in \u00a7152(d)(2)(G) as a \"child\" or \"grandparent\" relationship for the specific tax credit this statute governs (the credit for children and dependent relatives).\n    *   Even if we consider general kinship, \u00a7152(d)(2)(G) specifically defines the \"grandparent\" for the purpose of the *credit*. A spouse of a child (Alice is the spouse of the parent's husband) is not a grandparent.\n    *   The statute does not say \"Alice (Bob's wife) counts as a grandparent\". It lists specific kinship terms.\n\n4.  **Formulate the Conclusion**:\n    *   Section 152(d)(2)(G) defines the relationships (child, grandparent, etc.) for tax credits.\n    *   Alice is Bob's spouse.\n    *   There is no provision in \u00a7152(d)(2)(G) that automatically classifies a spouse of a child as a grandparent for the purposes of this section, especially regarding inheritance or dependent status for the specific credit this section facilitates (which is not explicitly defined as \"inheritance\" but rather \"grandparent credit\" or similar).\n    *   Therefore, Alice does *not* bear the relationship defined in \u00a7152(d)(2)(G).\n    *   Result: Contradiction.\n\n    *Self-Correction/Refinement*: Let's double check the exact text of \u00a7152(d)(2)(G) mentally or via common knowledge of the \"Grandparent Credit\" (IRC Section 2503 or similar, but the citation provided is the general dependency section).\n    IRC \u00a7152(d)(2)(G) defines \"grandparent\" as a parent of a parent.\n    Alice is Bob's spouse. Alice is the mother of Charlie's father? No. Alice is Bob's mother-in-law.\n    Does \"Bob's mother-in-law\" fall under \"parent of a parent\"? No.\n    Therefore, the relationship does not exist in the statutory list.\n    Answer: Contradiction.\n\n5.  **Final Check of Constraints**:\n    *   Step-by-step arithmetic? Not really needed for a binary fact-check, but I will provide the logical deduction steps clearly.\n    *   Citations: Only \u00a7152(d)(2)(G).\n    *   Final Line: \"Final Answer: Contradiction\".\n\n### Step-by-Step Derivation\n\n1.  **Identify the Tax Statute**: The question asks about the relationship between Alice and Charlie under 26 USC \u00a7152(d)(2)(G). This statute generally defines the eligibility for certain tax credits (such as the Child and Dependent Relative Tax Credit or similar provisions involving grandparents).\n2.  **Analyze the Statutory Definition**: Section 152(d)(2)(G) defines who counts as a \"grandparent\" for the purpose of this credit. Specifically, it defines a \"grandparent\" as a **parent of a parent**.\n3.  **Analyze the Facts**:\n    *   Alice married Bob on October 12, 1992. This makes Alice Bob's spouse.\n    *   Charlie is Bob's father. This establishes Bob as the father of Charlie.\n    *   Alice is Bob's mother-in-law (or Alice's husband is Bob's son-in-law, depending on gender, but Alice is the wife of the father's spouse).\n4.  **Evaluate the Relationship**:\n    *   Does Alice qualify as a \"parent of a parent\"?\n    *   No. Alice is the spouse of Bob (Bob's father's wife). She is not the parent of Bob's father (Charlie). She is not the grandparent of Charlie.\n5.  **Conclusion**: Since Alice does not meet the statutory definition of \"parent of a parent\" (or any other category in \u00a7152(d)(2)(G) like \"child\" or \"grandparent\" in the specific lineage sense required for the credit), she does not bear a relationship to Charlie under this section.\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(f)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(e)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.1,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 3,
+        "n_supported_citations": 1,
+        "citation_precision": 0.3333,
+        "citation_coverage": 0.3333,
+        "citation_sentences": 23,
+        "grounded_sentences": 1,
+        "grounding_rate": 0.0435,
+        "citations": [
+          "26 USC \u00a7152(d)",
+          "26 USC \u00a7152(d)(2)(G)",
+          "26 USC \u00a72503"
+        ],
+        "supported_citations": [
+          "26 USC \u00a7152(d)"
+        ]
+      },
+      "scoring": {
+        "earned": 0.125,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=contradiction; answer_correct=False; citation_precision=0.50",
+        "predicted_label": "contradiction",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(d)",
+          "26 USC \u00a7152(d)(2)(G)",
+          "26 USC \u00a72503"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(g)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.3333,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 3,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0017,
+        "rouge2": 0.0,
+        "rougeL": 0.0017
+      }
+    },
+    {
+      "id": "s152_d_2_H_neg",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(H) for the year 2015?",
+      "rubric": "Contradiction",
+      "response": "To determine whether Alice bears a relationship to Bob under section 152(d)(2)(H) in 2015, we must verify if Alice meets the criteria specified in that subsection for the relationship of \"a son-in-law, daughter-in-law, father-in-law, mother-in-law, brother-in-law, or sister-in-law.\"\n\n**Step 1: Identify the legal criteria from the statute.**\nSection 26 USC \u00a7152(d)(2)(H) states that for the purpose of being a \"qualifying relative,\" an individual bears a relationship to the taxpayer if they are:\n- An individual (other than a spouse) who **has the same principal place of abode** as the taxpayer **and** is a **member of the taxpayer's household**.\n\n**Step 2: Analyze the facts provided for the year 2015.**\n- **Fact Set:** Alice and Bob live in separate houses in 2015.\n- **Fact Set:** Bob is the father of Alice.\n- **Facts to evaluate:**\n  1. Do they have the same principal place of abode? No, they live in separate houses.\n  2. Do they are members of the taxpayer's household? No, they live in separate houses.\n\n**Step 3: Apply the facts to the statute.**\nSince Alice and Bob live in separate houses, they do not have the \"same principal place of abode,\" nor are they members of the same household. Therefore, the condition in paragraph (H) of subsection (d) is not met.\n\n**Conclusion:**\nAlice does not bear a relationship to Bob under section 152(d)(2)(H) in 2015.\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(e)",
+        "26 USC \u00a7152(f)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.5,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 2,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(d)(2)(H)",
+          "26 USC \u00a726"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.875,
+        "total": 1.0,
+        "feedback": "Expected Contradiction; predicted_label=contradiction; answer_correct=True; citation_precision=0.50",
+        "predicted_label": "contradiction",
+        "test_goal_label": "contradiction",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 1.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(d)(2)(H)",
+          "26 USC \u00a726"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(h)"
+        ],
+        "citation_fact_precision": 0.5,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 2,
+        "citation_correct": true,
+        "rouge1": 0.0081,
+        "rouge2": 0.0,
+        "rougeL": 0.0081
+      }
+    },
+    {
+      "id": "s152_d_2_H_pos",
+      "question": "Alice bears a relationship to Bob under section 152(d)(2)(H) for the year 2018?",
+      "rubric": "Entailment",
+      "response": "### Reasoning Process\n\n1.  **Analyze the Statute**:\n    *   The question asks whether Alice bears a relationship to Bob under **26 USC \u00a7152(d)(2)(H)**.\n    *   This section of the Internal Revenue Code defines \"Qualifying Surviving Spouse\" (QSS). Specifically, subsection (d)(2) lists circumstances where a person is a QSS. Subsection **(H)** specifically addresses a \"de facto\" qualifying surviving spouse.\n    *   The text of **26 USC \u00a7152(d)(2)(H)** generally provides that a person is a QSS if they have been living together as husband and wife for at least 3 years before the date of death or a date other than the earlier of: (1) the date the spouse dies, and (2) the date the person dies, for **at least two years** (or at least 15 months if the individual is a nonresident alien).\n    *   Crucially, the definition of \"living together as husband and wife\" generally requires that the persons were married (or previously married and subsequently married) and have a common domicile.\n\n2.  **Analyze the Facts**:\n    *   **Fact 1**: Alice and Bob \"started living together on April 15th, 2014.\"\n    *   **Fact 2**: \"Alice and Bob are **not married**.\"\n    *   **Question Context**: The year in the question is **2018**.\n    *   The facts establish that they were not married, but they lived together starting in April 2014.\n\n3.  **Evaluate \u00a7152(d)(2)(H) against the Facts**:\n    *   **Marital Requirement**: Section 152(d)(2)(H) of the Internal Revenue Code defines a \"Qualifying Surviving Spouse\" (QSS). The term \"spouse\" implies a legal or common-law marriage. The statutory language generally requires that the individual living with the QSS must have been \"living together as husband and wife.\"\n    *   Since the facts explicitly state that **Alice and Bob are not married**, they do not meet the fundamental requirement of being a \"husband and wife\" couple under the Internal Revenue Code.\n    *   Furthermore, the question asks about the relationship in **2018**.\n        *   If they were married: In 2018 (3+ years after April 2014), the 3-year requirement (or 15-month/18-month requirements depending on residency status) for a spouse would be met.\n        *   However, since they are **not married**, they do not constitute a \"spousal\" relationship within the definition of \u00a7152(d)(2)(H) for the purpose of being a QSS, even if they lived together. The statute specifically targets relationships *as spouses*.\n\n4.  **Conclusion**:\n    *   Because Alice and Bob are not married, they are not qualifying surviving spouses under Section 152(d)(2)(H).\n    *   Therefore, Alice does not bear a qualifying relationship to Bob (specifically in the context of the \"qualifying surviving spouse\" status derived from that statute).\n    *   This leads to a **Contradiction** between the general applicability of \u00a7152(d)(2)(H) (which requires marital status) and the specific fact that they are not married. Wait, let's re-read the prompt instructions carefully.\n\n    *Prompt Instruction*: \"This is a binary label decision task; Final Answer must be exactly Entailment or Contradiction.\"\n    *Instruction Note*: \"If you reason with booleans, map True=>Entailment and False=>Contradiction.\"\n\n    *Interpretation of the Label Task*:\n    Usually, in tax entailment tasks:\n    - **Entailment**: The facts provided support the conclusion that the subject (Alice bears a relationship...) is true.\n    - **Contradiction**: The facts provided contradict the conclusion, or the premises provided make the conclusion impossible.\n    \n    *Scenario A*: Is the statement \"Alice bears a relationship to Bob under section 152(d)(2)(H) for the year 2018\" entailed by the facts?\n    No, because they are not married.\n    \n    *Scenario B*: Is the statement \"Alice bears a relationship to Bob under section 152(d)(2)(H) for the year 2018\" contradictory by the facts?\n    Actually, the facts state they are *not married*. If the conclusion claims they *are* in that specific relationship (which requires marriage), then the facts contradict the conclusion.\n    \n    *Wait, let's look closer at the definition.*\n    Does \u00a7152(d)(2)(H) apply to step-children or non-marriage cohabitation?\n    Section 152(d)(2) lists:\n    (A) A former spouse.\n    (B) A child of a former spouse...\n    (C) A child... who has not remarried.\n    (D) A child of a former spouse who has remarried.\n    (E) A grandchild...\n    (F) A parent...\n    (G) An individual... who has lived with a former spouse...\n    (H) A person who has been living together as husband and wife...\n    (I) A former spouse... who has lived with...\n    \n    Item (H) is the critical one. It requires \"living together as **husband and wife**\". Since they are not married, they cannot qualify under (H).\n    \n    Therefore, the statement \"Alice bears a relationship... under section 152(d)(2)(H)\" is **False** for the given facts.\n    \n    In the context of the prompt's instruction: \"This is a binary label decision task; Final Answer must be exactly Entailment or Contradiction.\"\n    Usually, if the answer is False (Contradiction), we label it Contradiction. If the answer is True (Entailment), we label it Entailment.\n    However, often in these specific dataset types (like the Spoken Tax Bank or similar synthetic datasets), the task might be asking if the statement is *supported* (Entailment) or *refuted* (Contradiction).\n    \n    If the question is \"Does X entail Y?\", and X is the premise, Y is the hypothesis.\n    Premise: Alice and Bob are not married and lived together starting 2014.\n    Hypothesis: Alice bears a relationship... under \u00a7152(d)(2)(H).\n    \n    If the hypothesis is false based on the premise, the relationship is **Contradiction**.\n    \n    Let's double check if there's any tricky interpretation. Could \"relationship\" refer to a different legal relationship? No, the statute defines the \"Qualifying Surviving Spouse\". If Alice doesn't qualify, she isn't a QSS.\n    \n    Therefore, the fact that they are not married makes the specific condition of \u00a7152(d)(2)(H) inapplicable.\n    Result: Contradiction.\n\n    *Self-Correction/Refinement*:\n    Wait, could the prompt imply that the fact *itself* (they are not married) makes the statement \"Alice bears a relationship...\" false? Yes.\n    So the fact contradicts the statement.\n    Label: Contradiction.\n\n    *Wait, is there any ambiguity?*\n    What if the question implies: \"Is it true that Alice bears a relationship...?\"\n    If the answer is No, does that mean Entailment or Contradiction?\n    Standard NLI (Natural Language Inference):\n    Premise: Alice and Bob are not married.\n    Hypothesis: Alice bears a relationship to Bob under \u00a7152(d)(2)(H).\n    Since the premise negates the necessary condition (marriage) for the hypothesis, the relation is **Contradiction**.\n\n    Let's verify the statute citation again.\n    26 USC \u00a7152(d)(2)(H) states a person is a QSS if \"has been living together as husband and wife... for at least two years\".\n    Facts: \"Alice and Bob are not married.\"\n    Inference: Cannot be \"living together as husband and wife\".\n    Conclusion: Not a QSS.\n    Question: Does Alice bear a relationship... under this section?\n    Answer: No.\n    Type of relation: Contradiction.\n\n### Final Answer:\nContradiction\n\nFinal Answer: Contradiction",
+      "mode": "hybrid",
+      "model": "ollama:qwen3.5:2b",
+      "retrieved_ids": [
+        "26 USC \u00a7152(b)",
+        "26 USC \u00a7152(f)",
+        "26 USC \u00a7152(a)",
+        "26 USC \u00a7152(c)",
+        "26 USC \u00a7152(d)",
+        "26 USC \u00a7152(e)",
+        "IRS Pub. 501: p003 s01 Page 3",
+        "IRS Pub. 501: p011 s07 The term \u201cdependent\u201d means:",
+        "IRS Pub. 501: p029 s12 Gross income:",
+        "SARA Source: 26 USC \u00a72"
+      ],
+      "n_chunks": 10,
+      "retrieval_metrics": {
+        "recall_at_k": 0.5,
+        "mrr": 0.1,
+        "recall_at_k_exact": 0.0,
+        "mrr_exact": 0.0,
+        "source_recall": 1.0,
+        "source_hits": {
+          "usc26": 1.0
+        }
+      },
+      "citation_metrics": {
+        "n_citations": 2,
+        "n_supported_citations": 0,
+        "citation_precision": 0.0,
+        "citation_coverage": 0.0,
+        "citation_sentences": 15,
+        "grounded_sentences": 0,
+        "grounding_rate": 0.0,
+        "citations": [
+          "26 USC \u00a7152(d)(2)",
+          "26 USC \u00a7152(d)(2)(H)"
+        ],
+        "supported_citations": []
+      },
+      "scoring": {
+        "earned": 0.25,
+        "total": 1.0,
+        "feedback": "Expected Entailment; predicted_label=contradiction; answer_correct=False; citation_precision=1.00",
+        "predicted_label": "contradiction",
+        "test_goal_label": "entailment",
+        "expected_label_consistent_with_test": true,
+        "answer_correct": 0.0,
+        "calculation_steps_present": null,
+        "cited_refs": [
+          "26 USC \u00a7152(d)(2)",
+          "26 USC \u00a7152(d)(2)(H)"
+        ],
+        "matched_refs": [
+          "26 usc \u00a7152(d)(2)(h)"
+        ],
+        "citation_fact_precision": 1.0,
+        "citation_fact_recall": 1.0,
+        "citation_fact_precision_raw": 0.5,
+        "citation_fact_recall_raw": 1.0,
+        "n_fact_refs": 1,
+        "n_cited_refs": 2,
+        "n_correct_cited_refs": 1,
+        "n_cited_refs_normalized": 1,
+        "citation_correct": true,
+        "rouge1": 0.0018,
+        "rouge2": 0.0,
+        "rougeL": 0.0018
       }
     }
   ]

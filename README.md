@@ -252,7 +252,7 @@ python evaluation/run_eval.py --dataset taxbench --mode hybrid --limit 10
 python evaluation/run_eval.py --dataset taxbench --mode all --skip-scoring
 
 # Local open-source generation + local judge
-python evaluation/run_eval.py --dataset taxbench --mode hybrid --model ollama --judge ollama --limit 5
+python evaluation/run_eval.py --dataset taxbench --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_taxbench
 ```
 
 ### Run IRS Form Q&A evaluation
@@ -266,6 +266,9 @@ python evaluation/run_eval.py --dataset irs_form_qa --mode all --model claude
 
 # Dry run — no index needed, no API credits spent
 python evaluation/run_eval.py --dataset irs_form_qa --mode none --dry-run --limit 5
+
+#Ollama runs with local model and judge
+python evaluation/run_eval.py --dataset irs_form_qa --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_irs_form_qa
 ```
 
 > **Note:** `--mode none` never loads the FAISS index, so dry runs work even
@@ -290,7 +293,7 @@ SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode all --mod
 SARA runs now include a per-mode comparison summary with hybrid-vs-none deltas,
 so you can directly show the impact of adding GraphRAG context.
 # Same run with local open-source model
-SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5
+SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_sara_v3
 ```
 
 For local Ollama runs, timeout and retry behavior is configurable:
@@ -423,3 +426,28 @@ and add a display label to `src/ingestion/irs_xml_parser.SOURCE_LABELS`.
 
 For local inference endpoint configuration, set `OLLAMA_BASE_URL`
 (default: `http://localhost:11434`).
+
+## Results (20 counts)
+
+### sara_v3 | ollama
+
+| mode | cases | score% | ans_ok | cite_prec | cite_rec | unk_rate | r@k_hier | mrr_hier | r@k_exact | mrr_exact |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| none | 20 | 66.0415 | 0.6000 | 0.8417 | 0.9667 | 0.0000 | - | - | - | - |
+| vector | 20 | 62.3905 | 0.5263 | 0.9167 | 0.9737 | 0.0000 | 0.4167 | 0.3152 | 0.1053 | 0.0585 |
+| graph | 20 | 70.2500 | 0.6500 | 0.8600 | 1.0000 | 0.0000 | 0.6292 | 0.3513 | 0.2083 | 0.2833 |
+| hybrid | 20 | 78.3995 | 0.7895 | 0.7675 | 0.9737 | 0.0000 | 0.6228 | 0.4697 | 0.1930 | 0.1316 |
+
+### Hybrid - None Delta
+
+| metric | delta |
+| --- | ---: |
+| score_pct | +12.3580 |
+| answer_correct | +0.1895 |
+| citation_fact_precision | -0.0741 |
+| citation_fact_recall | +0.0070 |
+| unknown_label_rate | +0.0000 |
+| recall_at_k_hier | - |
+| mrr_hier | - |
+| recall_at_k_exact | - |
+| mrr_exact | - |
