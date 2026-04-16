@@ -22,8 +22,15 @@ from pathlib import Path
 from src import config as cfg
 
 # Apply runtime controls before importing ML libraries.
-os.environ["TRANSFORMERS_OFFLINE"] = os.environ.get("TRANSFORMERS_OFFLINE", "1")
-os.environ["HF_DATASETS_OFFLINE"] = os.environ.get("HF_DATASETS_OFFLINE", "1")
+# Default to online mode so first-time model downloads can succeed.
+# Set HF_HUB_OFFLINE=1 (or TRANSFORMERS_OFFLINE=1) to force offline execution.
+os.environ["HF_HUB_OFFLINE"] = os.environ.get("HF_HUB_OFFLINE", "0")
+os.environ["TRANSFORMERS_OFFLINE"] = os.environ.get(
+    "TRANSFORMERS_OFFLINE", os.environ["HF_HUB_OFFLINE"]
+)
+os.environ["HF_DATASETS_OFFLINE"] = os.environ.get(
+    "HF_DATASETS_OFFLINE", os.environ["HF_HUB_OFFLINE"]
+)
 os.environ["TOKENIZERS_PARALLELISM"] = os.environ.get("TOKENIZERS_PARALLELISM", "false")
 # Prevent duplicate OpenMP library crashes on Intel Mac and Windows with MKL.
 os.environ["KMP_DUPLICATE_LIB_OK"] = os.environ.get("KMP_DUPLICATE_LIB_OK", "TRUE")
