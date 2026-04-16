@@ -451,3 +451,20 @@ For local inference endpoint configuration, set `OLLAMA_BASE_URL`
 | mrr_hier | - |
 | recall_at_k_exact | - |
 | mrr_exact | - |
+
+## Metrics
+
+- **score%**: LLM judge score as a percentage (0–100 scale)
+- **ans_ok**: final answer correctness (0–1)
+- **cite_prec**: precision of cited sources (0–1)
+- **cite_rec**: recall of cited sources (0–1)
+- **unk_rate**: rate of "unknown" judgments (0–1)
+- **r@k_hier**: recall@k for hierarchical relevance (0–1)
+- **mrr_hier**: MRR for hierarchical relevance (0–1)
+- **r@k_exact**: recall@k for exact section ID matches (0–1)
+- **mrr_exact**: MRR for exact section ID matches (0–1)
+
+- **hybrid** has best overall score and answer correctness.
+- **vector** has best citation precision.
+- **graph** has strongest strict retrieval (best r@k_exact and mrr_exact).
+- All modes have unk_rate = 0.0000, so no Unknown predictions in this sample.
