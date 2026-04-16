@@ -49,9 +49,16 @@ IRS XML/PDF publications + Title 26 USC XML
 
 ## Step-by-step setup
 
+Commands below include Bash and PowerShell variants where syntax differs.
+
 ### 1. Create and activate the conda environment
 
 ```bash
+conda create -n cs789_research python=3.11
+conda activate cs789_research
+```
+
+```powershell
 conda create -n cs789_research python=3.11
 conda activate cs789_research
 ```
@@ -65,9 +72,18 @@ cd graphrag_tax
 pip install -r requirements.txt
 ```
 
+```powershell
+Set-Location graphrag_tax
+pip install -r requirements.txt
+```
+
 ### 3. Download the spaCy model
 
 ```bash
+python -m spacy download en_core_web_sm
+```
+
+```powershell
 python -m spacy download en_core_web_sm
 ```
 
@@ -90,6 +106,14 @@ ollama pull qwen2.5:3b
 ollama serve
 ```
 
+```powershell
+# One-time model download
+ollama pull qwen2.5:3b
+
+# Start server if not already running
+ollama serve
+```
+
 ### 5. Build the knowledge graph and vector index
 
 This is a one-time step.  It parses available XML/PDF sources, builds the FAISS vector
@@ -104,6 +128,10 @@ By default, artifacts are profile-scoped under `data/processed/<profile>/`
 `data/processed/` directly.
 
 ```bash
+python scripts/build_pipeline.py
+```
+
+```powershell
 python scripts/build_pipeline.py
 ```
 
@@ -175,6 +203,10 @@ GPU checklist:
 python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.version.cuda)"
 ```
 
+```powershell
+python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.version.cuda)"
+```
+
 If your torch version ends with `+cpu` or `cuda_available` is `False`, embedding will run on CPU only.
 
 Examples:
@@ -217,6 +249,10 @@ Interactive multi-turn assistant. Requires the build step and either API keys
 python chatbot.py
 ```
 
+```powershell
+python chatbot.py
+```
+
 Options:
 
 ```bash
@@ -231,6 +267,22 @@ python chatbot.py --top-k 15       # retrieve more chunks per query
 
 # choose a different local model
 OLLAMA_MODEL=llama3.2:3b python chatbot.py --model ollama
+```
+
+```powershell
+# PowerShell (Windows)
+python chatbot.py --mode hybrid    # default: graph + vector retrieval
+python chatbot.py --mode vector    # vector index only
+python chatbot.py --mode graph     # graph traversal only
+python chatbot.py --mode none      # LLM only, no retrieval (baseline)
+python chatbot.py --compare        # side-by-side: hybrid vs. LLM-only
+python chatbot.py --model gemini   # use Gemini instead of Claude
+python chatbot.py --model ollama   # use local model from OLLAMA_MODEL
+python chatbot.py --top-k 15       # retrieve more chunks per query
+
+# choose a different local model
+$env:OLLAMA_MODEL="llama3.2:3b"
+python chatbot.py --model ollama
 ```
 
 > Local Ollama inference is usually free per token (no provider billing), but
@@ -257,9 +309,20 @@ python scripts/test_query.py "earned income credit requirements" --mode graph --
 python scripts/test_query.py "§32 EIC phase-out" --mode hybrid
 ```
 
+```powershell
+python scripts/test_query.py "standard deduction for single filers 2024"
+python scripts/test_query.py "earned income credit requirements" --mode graph --k 8
+python scripts/test_query.py "§32 EIC phase-out" --mode hybrid
+```
+
 Visualize the knowledge graph in a browser:
 
 ```bash
+python scripts/viz_graph.py --sample-n 300
+# opens data/processed/graph_view.html
+```
+
+```powershell
 python scripts/viz_graph.py --sample-n 300
 # opens data/processed/graph_view.html
 ```
@@ -319,6 +382,28 @@ python evaluation/run_eval.py --dataset taxbench --mode all --skip-scoring
 python evaluation/run_eval.py --dataset taxbench --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_taxbench
 ```
 
+```powershell
+# PowerShell (Windows)
+
+# Hybrid mode, Claude
+python evaluation/run_eval.py --dataset taxbench --mode hybrid --model claude
+
+# All four modes back-to-back
+python evaluation/run_eval.py --dataset taxbench --mode all --model claude
+
+# Dry run to test the pipeline without spending API credits
+python evaluation/run_eval.py --dataset taxbench --mode hybrid --dry-run
+
+# First 10 cases only
+python evaluation/run_eval.py --dataset taxbench --mode hybrid --limit 10
+
+# Skip the LLM-as-judge scoring step (generate responses only)
+python evaluation/run_eval.py --dataset taxbench --mode all --skip-scoring
+
+# Local open-source generation + local judge
+python evaluation/run_eval.py --dataset taxbench --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_taxbench
+```
+
 ### Run IRS Form Q&A evaluation
 
 ```bash
@@ -335,12 +420,30 @@ python evaluation/run_eval.py --dataset irs_form_qa --mode none --dry-run --limi
 python evaluation/run_eval.py --dataset irs_form_qa --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_irs_form_qa
 ```
 
+```powershell
+# PowerShell (Windows)
+
+# Hybrid mode, Claude judge
+python evaluation/run_eval.py --dataset irs_form_qa --mode hybrid --model claude
+
+# All four modes back-to-back
+python evaluation/run_eval.py --dataset irs_form_qa --mode all --model claude
+
+# Dry run - no index needed, no API credits spent
+python evaluation/run_eval.py --dataset irs_form_qa --mode none --dry-run --limit 5
+
+# Ollama runs with local model and judge
+python evaluation/run_eval.py --dataset irs_form_qa --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_irs_form_qa
+```
+
 > **Note:** `--mode none` never loads the FAISS index, so dry runs work even
 > before the build step has been run.
 
 ### Run SARA v3 evaluation
 
 ```bash
+# Bash (Linux/macOS/WSL)
+
 # Default split is test
 python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
 
@@ -353,12 +456,35 @@ SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --
 # Compare LLM-only vs GraphRAG in one run (none, vector, graph, hybrid)
 SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama --limit 20
 
-
-SARA runs now include a per-mode comparison summary with hybrid-vs-none deltas,
-so you can directly show the impact of adding GraphRAG context.
 # Same run with local open-source model
 SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_sara_v3
 ```
+
+```powershell
+# PowerShell (Windows)
+
+# Default split is test
+python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
+
+# Choose split via environment variable
+$env:SARA_SPLIT="train"
+python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
+
+# Use retrieval modes once indexes are available (judge not required for SARA)
+$env:SARA_SPLIT="test"
+python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model gemini --limit 5
+
+# Compare LLM-only vs GraphRAG in one run (none, vector, graph, hybrid)
+$env:SARA_SPLIT="test"
+python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama --limit 20
+
+# Same run with local open-source model
+$env:SARA_SPLIT="test"
+python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_sara_v3
+```
+
+SARA runs now include a per-mode comparison summary with hybrid-vs-none deltas,
+so you can directly show the impact of adding GraphRAG context.
 
 For local Ollama runs, timeout and retry behavior is configurable:
 
@@ -366,6 +492,17 @@ For local Ollama runs, timeout and retry behavior is configurable:
 OLLAMA_TIMEOUT_SECONDS=240 OLLAMA_MAX_RETRIES=2 OLLAMA_RETRY_BACKOFF_SECONDS=2 \
 SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode graph --model ollama --limit 20
 ```
+
+```powershell
+$env:OLLAMA_TIMEOUT_SECONDS="240"
+$env:OLLAMA_MAX_RETRIES="2"
+$env:OLLAMA_RETRY_BACKOFF_SECONDS="2"
+$env:SARA_SPLIT="test"
+python evaluation/run_eval.py --dataset sara_v3 --mode graph --model ollama --limit 20
+```
+
+In PowerShell, environment variables must be set with `$env:NAME="value"` before running Python.
+Do not append `NAME=value` tokens at the end of the `python ...` command.
 
 When a single case times out or errors, the run now records that case as failed
 and continues with the remaining cases instead of aborting the entire batch.
@@ -409,6 +546,26 @@ make smoke            # quick retrieval smoke test
 make test             # run pytest suite
 make eval-sara-dry    # run SARA evaluation dry-run (mode none)
 make eval-taxbench-dry
+```
+
+```powershell
+# PowerShell (Windows) equivalents
+python -m pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+
+$env:KNOWLEDGE_PROFILE="2017"
+python scripts/build_pipeline.py
+
+$env:KNOWLEDGE_PROFILE="2024-2026"
+python scripts/build_pipeline.py
+
+python scripts/test_query.py "standard deduction for single filers"
+python -m pytest -q
+
+$env:SARA_SPLIT="test"
+python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20 --overwrite
+
+python evaluation/run_eval.py --dataset taxbench --mode hybrid --dry-run --limit 5 --overwrite
 ```
 
 ---
