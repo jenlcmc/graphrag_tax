@@ -110,6 +110,8 @@ python scripts/build_pipeline.py
 To run a specific knowledge profile:
 
 ```bash
+# Bash (Linux/macOS/WSL)
+
 # 2017 profile (USC XML + IRS PDFs in knowledge/2017)
 KNOWLEDGE_PROFILE=2017 python scripts/build_pipeline.py
 
@@ -118,6 +120,20 @@ KNOWLEDGE_PROFILE=2024-2026 python scripts/build_pipeline.py
 
 # Optional: disable profile-scoped output directories
 PROFILED_OUTPUTS=0 KNOWLEDGE_PROFILE=2017 python scripts/build_pipeline.py
+```
+
+```powershell
+# PowerShell (Windows)
+
+$env:KNOWLEDGE_PROFILE="2017"
+python scripts/build_pipeline.py
+
+$env:KNOWLEDGE_PROFILE="2024-2026"
+python scripts/build_pipeline.py
+
+$env:PROFILED_OUTPUTS="0"
+$env:KNOWLEDGE_PROFILE="2017"
+python scripts/build_pipeline.py
 ```
 
 Expected output:
@@ -138,9 +154,57 @@ Pipeline complete. Artifacts saved to: data/processed/
 
 Expected runtime: 10–20 minutes on first run (embedding generation).
 
-> **Intel Mac / Windows note:** The pipeline auto-detects Intel Mac and switches
-> to `all-MiniLM-L6-v2` (smaller, faster) and reduces batch sizes.
-> To force low-resource mode manually: `LOW_RESOURCE_MODE=1 python scripts/build_pipeline.py`
+### Build performance tuning (embedding stage)
+
+Defaults in this repo are now tuned to use more available hardware:
+
+- `EMBEDDING_DEVICE=auto` (tries CUDA, then MPS, then CPU)
+- `EMBEDDING_THREADS` auto-selects up to 8 threads on non-low-resource systems
+
+Useful knobs:
+
+- `EMBEDDING_MODEL`: `all-mpnet-base-v2` (higher quality, slower) or `all-MiniLM-L6-v2` (faster, smaller)
+- `EMBEDDING_THREADS`: increase for CPU runs (for a 16-logical-core CPU, start with `8` to `12`)
+- `EMBEDDING_BATCH_SIZE`: increase on GPU to improve throughput (for example `64` or `128`)
+- `EMBEDDING_ENCODE_CHUNK_SIZE`: larger outer chunks reduce overhead (for example `512`)
+- `DUAL_VECTOR_EMBEDDING=0`: skips separate section-id embedding pass for faster builds
+
+GPU checklist:
+
+```bash
+python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.version.cuda)"
+```
+
+If your torch version ends with `+cpu` or `cuda_available` is `False`, embedding will run on CPU only.
+
+Examples:
+
+```bash
+# Fast CPU-oriented build
+EMBEDDING_MODEL=all-MiniLM-L6-v2 EMBEDDING_THREADS=10 KNOWLEDGE_PROFILE=2017 python scripts/build_pipeline.py
+
+# GPU-oriented build
+EMBEDDING_DEVICE=auto EMBEDDING_BATCH_SIZE=128 EMBEDDING_ENCODE_CHUNK_SIZE=512 KNOWLEDGE_PROFILE=2017 python scripts/build_pipeline.py
+```
+
+```powershell
+# Fast CPU-oriented build
+$env:EMBEDDING_MODEL="all-MiniLM-L6-v2"
+$env:EMBEDDING_THREADS="10"
+$env:KNOWLEDGE_PROFILE="2017"
+python scripts/build_pipeline.py
+
+# GPU-oriented build
+$env:EMBEDDING_DEVICE="auto"
+$env:EMBEDDING_BATCH_SIZE="128"
+$env:EMBEDDING_ENCODE_CHUNK_SIZE="512"
+$env:KNOWLEDGE_PROFILE="2017"
+python scripts/build_pipeline.py
+```
+
+> **Intel Mac note:** low-resource mode auto-enables on Intel Macs and defaults to
+> a smaller embedding model and safer batch settings. To force low-resource mode
+> manually, run with `LOW_RESOURCE_MODE=1`.
 
 ---
 

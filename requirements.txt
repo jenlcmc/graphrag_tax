@@ -12,7 +12,7 @@ faiss-cpu>=1.7
 networkx>=3.6
 python-dotenv>=1.2
 pypdf>=4.2
-huggingface_hub
+huggingface-hub>=0.23.2,<1.0
 
 # LLM API clients — needed for chatbot.py and evaluation/run_eval.py
 anthropic>=0.34

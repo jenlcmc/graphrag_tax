@@ -67,10 +67,40 @@ class VectorIndex:
         except RuntimeError:
             pass
 
-        self.model          = SentenceTransformer(model_name, device=cfg.EMBEDDING_DEVICE)
+        resolved_device = self._resolve_device(cfg.EMBEDDING_DEVICE)
+        if resolved_device != cfg.EMBEDDING_DEVICE:
+            print(
+                f"Embedding device resolved: requested '{cfg.EMBEDDING_DEVICE}' -> using '{resolved_device}'"
+            )
+
+        self.model          = SentenceTransformer(model_name, device=resolved_device)
         self.content_index  = None
         self.sectionid_index = None
         self.metadata       = []
+
+    @staticmethod
+    def _resolve_device(requested_device: str) -> str:
+        requested = (requested_device or "auto").strip().lower()
+
+        if requested == "auto":
+            if torch.cuda.is_available():
+                return "cuda"
+            mps_backend = getattr(torch.backends, "mps", None)
+            if mps_backend and mps_backend.is_available():
+                return "mps"
+            return "cpu"
+
+        if requested == "cuda" and not torch.cuda.is_available():
+            print("CUDA requested but unavailable; falling back to CPU.")
+            return "cpu"
+
+        if requested == "mps":
+            mps_backend = getattr(torch.backends, "mps", None)
+            if not (mps_backend and mps_backend.is_available()):
+                print("MPS requested but unavailable; falling back to CPU.")
+                return "cpu"
+
+        return requested
 
     def build(self, chunks: list[dict]) -> None:
         texts       = [c["text"]       for c in chunks]
