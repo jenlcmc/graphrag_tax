@@ -180,7 +180,9 @@ Final Answer: <value-or-label>
 Constraints:
 - The Final Answer line is mandatory — write it even if the steps above are incomplete.
 - Use ONLY the provided case facts for taxpayer-specific values.
-- Cite all relevant section references from the allowed citation list.
+- Treat "SARA Authoritative Statute Text" as the primary legal source.
+- Use retrieved excerpts as supplemental context; if they conflict with SARA statute text, follow SARA statute text.
+- When an allowed citation list is provided, cite from that list. Otherwise cite the relevant SARA statute sections you used.
 """
 
 
@@ -233,8 +235,15 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
     text_context = str(case.metadata.get("context", "")).strip()
     structured_facts = str(case.metadata.get("facts", "")).strip()
     expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
-    allowed_refs = case.relevant_ids or []
-    allowed_text = ", ".join(allowed_refs) if allowed_refs else "None"
+    allowed_refs = list(case.metadata.get("allowed_refs") or case.relevant_ids or [])
+    if allowed_refs:
+        shown = allowed_refs[:24]
+        if len(allowed_refs) > 24:
+            allowed_text = ", ".join(shown) + f", ... (+{len(allowed_refs) - 24} more)"
+        else:
+            allowed_text = ", ".join(shown)
+    else:
+        allowed_text = "(not provided; cite section references from the SARA statute text)"
 
     if expected_type == "label":
         label_options = _sara_label_options(case)
@@ -659,6 +668,59 @@ def _dedupe_chunks_by_section(chunks: list[dict]) -> list[dict]:
     return ranked
 
 
+def _sara_ref_matches_section(section_id: str, allowed_refs: list[str]) -> bool:
+    sid = (section_id or "").strip().lower()
+    if not sid or not allowed_refs:
+        return False
+    for ref in allowed_refs:
+        canonical = str(ref or "").strip().lower()
+        if not canonical:
+            continue
+        if sid == canonical or sid.startswith(canonical + "("):
+            return True
+    return False
+
+
+def _prioritize_sara_supplement_chunks(chunks: list[dict], case: EvalCase) -> list[dict]:
+    """Rank SARA retrieval chunks with statute-first, supplement-second policy."""
+    allowed_refs = list(case.metadata.get("allowed_refs") or case.relevant_ids or [])
+    ranked: list[tuple[int, float, str, dict]] = []
+
+    for chunk in chunks:
+        section_id = str(chunk.get("section_id", "")).strip()
+        source = str(chunk.get("source", "")).strip().lower()
+
+        if (
+            not cfg.SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY
+            and section_id.lower().startswith("community:")
+        ):
+            continue
+
+        if (
+            cfg.SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS
+            and _sara_ref_matches_section(section_id, allowed_refs)
+        ):
+            tier = 0
+        elif source == "usc26":
+            tier = 1
+        elif source and source != "graph_community":
+            tier = 2
+        else:
+            tier = 3
+
+        # Lower tier is better; higher relevance score breaks ties.
+        ranked.append((tier, -_chunk_relevance_score(chunk), section_id, chunk))
+
+    if not ranked:
+        ranked = [
+            (0, -_chunk_relevance_score(chunk), str(chunk.get("section_id", "")), chunk)
+            for chunk in chunks
+        ]
+
+    ranked.sort(key=lambda item: (item[0], item[1], item[2]))
+    return [item[3] for item in ranked[: cfg.SARA_SUPPLEMENT_TOP_K]]
+
+
 def _sara_max_tokens(case: EvalCase) -> int:
     """Return an appropriate max-token cap for a SARA case.
 
@@ -702,7 +764,11 @@ def run_case(
             depth=cfg.BFS_DEPTH,
             mode=mode,
         )
-        chunks = _dedupe_chunks_by_section(chunks)[: cfg.TOP_K_VECTOR]
+        chunks = _dedupe_chunks_by_section(chunks)
+        if is_sara:
+            chunks = _prioritize_sara_supplement_chunks(chunks, case)
+        else:
+            chunks = chunks[: cfg.TOP_K_VECTOR]
     retrieved_ids = [c["section_id"] for c in chunks]
 
     # Generate response

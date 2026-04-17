@@ -488,17 +488,64 @@ _CASE_PREFIX_TO_STATUTES: dict[str, list[str]] = {
 }
 
 
-def _load_sara_statutes(case_id: str, statutes_dir: Path) -> str:
-    """Return the concatenated text of SARA source statutes relevant to case_id."""
+_STATUTE_FILE_RE = re.compile(r"^section([0-9]{1,4}[a-z]?)$", re.IGNORECASE)
+
+
+def _statute_files_for_case(case_id: str) -> list[str]:
     for prefix, filenames in _CASE_PREFIX_TO_STATUTES.items():
         if case_id.startswith(prefix):
-            parts: list[str] = []
-            for fname in filenames:
-                fpath = statutes_dir / fname
-                if fpath.exists():
-                    parts.append(fpath.read_text(encoding="utf-8").strip())
-            return "\n\n---\n\n".join(parts)
+            return list(filenames)
+    return []
+
+
+def _refs_from_statute_files(filenames: list[str]) -> list[str]:
+    refs: set[str] = set()
+    for filename in filenames:
+        match = _STATUTE_FILE_RE.fullmatch(filename.strip())
+        if not match:
+            continue
+        refs.add(f"26 USC §{match.group(1).lower()}")
+    return sorted(refs)
+
+
+def _load_sara_statutes(case_id: str, statutes_dir: Path) -> str:
+    """Return the concatenated text of SARA source statutes relevant to case_id."""
+    filenames = _statute_files_for_case(case_id)
+    if filenames:
+        parts: list[str] = []
+        for fname in filenames:
+            fpath = statutes_dir / fname
+            if fpath.exists():
+                parts.append(fpath.read_text(encoding="utf-8").strip())
+        return "\n\n---\n\n".join(parts)
     return ""
+
+
+def _derive_sara_references(
+    case_id: str,
+    context_text: str,
+    facts_text: str,
+    question: str,
+    sara_statutes: str,
+) -> tuple[list[str], list[str]]:
+    """Return (allowed_refs, relevant_ids) for SARA evaluation.
+
+    - allowed_refs: concise list used in the prompt citation constraint.
+    - relevant_ids: broader list used for retrieval/citation scoring.
+    """
+    statute_files = _statute_files_for_case(case_id)
+    allowed_refs = _refs_from_statute_files(statute_files)
+
+    relevant_ids = set(
+        extract_usc_refs(f"{context_text}\n{facts_text}\n{question}\n{sara_statutes}")
+    )
+    relevant_ids.update(allowed_refs)
+
+    # Fallback for edge cases where parsing fails to detect any USC refs.
+    if not relevant_ids:
+        relevant_ids.update(allowed_refs)
+
+    return (sorted(allowed_refs), sorted(relevant_ids))
 
 
 class SARAV3Dataset(Dataset):
@@ -538,8 +585,14 @@ class SARAV3Dataset(Dataset):
             expected = parsed["expected"]
             expected_type = parsed["expected_type"]
 
-            relevant_ids = extract_usc_refs(f"{context_text}\n{facts_text}\n{question}")
             sara_statutes = _load_sara_statutes(case_id, statutes_dir) if statutes_dir.exists() else ""
+            allowed_refs, relevant_ids = _derive_sara_references(
+                case_id=case_id,
+                context_text=context_text,
+                facts_text=facts_text,
+                question=question,
+                sara_statutes=sara_statutes,
+            )
 
             cases.append(
                 EvalCase(
@@ -555,6 +608,7 @@ class SARAV3Dataset(Dataset):
                         "test_goal": parsed["test_goal"],
                         "test_goal_negated": parsed["test_goal_negated"],
                         "test_goal_numbers": parsed["test_goal_numbers"],
+                        "allowed_refs": allowed_refs,
                         "split": split,
                         "sara_statutes": sara_statutes,
                     },

@@ -166,6 +166,18 @@ BFS_DEPTH       = 2
 SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
 	"SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL", False
 )
+# For SARA, retrieval chunks are supplemental to the per-case authoritative
+# statute block in the prompt. Keep this cap independent so we can tune SARA
+# without affecting general TaxBench retrieval.
+SARA_SUPPLEMENT_TOP_K = max(1, _env_int("SARA_SUPPLEMENT_TOP_K", TOP_K_VECTOR))
+# Community summaries can be useful for broad questions 
+SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY = _env_bool(
+	"SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY", True
+)
+# Prefer chunks that match case-allowed USC refs before using broader context.
+SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS = _env_bool(
+	"SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS", True
+)
 # Trim long retrieval excerpts before adding to prompts.
 PROMPT_EXCERPT_MAX_CHARS = _env_int("PROMPT_EXCERPT_MAX_CHARS", 1000)
 
@@ -199,7 +211,7 @@ GRAPH_COVERAGE_PENALTY_FALLBACK = _env_float("GRAPH_COVERAGE_PENALTY_FALLBACK", 
 # Graph-weighted: vector adds noisy IRS pub fragments on statute-focused queries.
 # With three-step reasoning prompts the model reads every chunk, so noise hurts.
 HYBRID_ALPHA_DEFAULT: float = 0.35
-# When the query cites an explicit IRC § reference, lean heavily on graph.
+# When the query cites an explicit IRC § reference, lean heavily on graph for precision cites.
 HYBRID_ALPHA_SECTION_REF: float = 0.2
 # Cache merged retrieval results by (mode, query, k, depth).
 HYBRID_QUERY_CACHE_SIZE = max(0, _env_int("HYBRID_QUERY_CACHE_SIZE", 1024))

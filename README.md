@@ -240,6 +240,9 @@ Graph/hybrid quality-speed knobs:
 - `GRAPH_MAX_ENTRY_NODES` and `GRAPH_MAX_NEIGHBORS_PER_NODE` cap traversal fanout
 - `HYBRID_SCORE_NORMALIZE=1` reduces score-scale mismatch before blending
 - `SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL=0` keeps SARA retrieval focused by default
+- `SARA_SUPPLEMENT_TOP_K` caps SARA supplemental retrieval chunks (independent of `TOP_K_VECTOR`)
+- `SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS=1` prioritizes case-allowed USC sections first
+- `SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY=0` avoids graph community summaries in SARA by default
 
 GPU checklist:
 
@@ -281,7 +284,6 @@ python scripts/build_pipeline.py
 > **Intel Mac note:** low-resource mode auto-enables on Intel Macs and defaults to
 > a smaller embedding model and safer batch settings. To force low-resource mode
 > manually, run with `LOW_RESOURCE_MODE=1`.
-
 > **FAISS GPU note:** `faiss-gpu` is optional. If unavailable, vector search still uses
 > CUDA through torch fallback when CUDA torch is installed. `faiss-gpu-cuvs` is not
 > required for this project.
@@ -724,6 +726,7 @@ All settings live in [src/config.py](src/config.py).
 | `EMBEDDING_MODEL`              | `all-mpnet-base-v2` | `all-MiniLM-L6-v2` on Intel Mac             |
 | `TOP_K_VECTOR`                 | 7                   | Chunks returned per query                   |
 | `BFS_DEPTH`                    | 2                   | Graph traversal hops                        |
+| `SARA_SUPPLEMENT_TOP_K`        | 7                   | SARA-only cap for supplemental retrieval    |
 | `EXCLUDED_SOURCES`             | `{i1040nr, p519}`   | Non-resident sources, excluded              |
 | `LOW_RESOURCE_MODE`            | auto (Intel Mac)    | Smaller model + smaller batches             |
 | `OLLAMA_MODEL`                 | `qwen3.5:2b`        | Local model used when `--model ollama`      |
@@ -750,6 +753,11 @@ All settings live in [src/config.py](src/config.py).
 | `SARA_MAX_TOKENS_NUMERIC`      | 5000                | Max output tokens for numeric calc cases    |
 | `SARA_MAX_TOKENS_STRING`       | 4000                | Max output tokens for string lookup cases   |
 | `SARA_MAX_TOKENS_DEFAULT`      | 4000                | Max output tokens for freeform cases        |
+
+SARA supplemental retrieval controls:
+
+- `SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS=True` ranks case-allowed USC sections first.
+- `SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY=False` skips graph community summaries in SARA mode.
 
 To add a new IRS XML source: place its XML at `knowledge/<name>/<name>.xml`
 and add a display label to `src/ingestion/irs_xml_parser.SOURCE_LABELS`.
