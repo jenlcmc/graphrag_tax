@@ -69,6 +69,18 @@ class VectorIndex:
 
         self.embedding_device = resolved_device
         self.model = SentenceTransformer(model_name, device=resolved_device)
+
+        # Use larger batches on GPU — GPU throughput scales with batch size,
+        # while CPU benefits from smaller batches to avoid OOM on big corpora.
+        if resolved_device == "cuda":
+            self._encode_batch_size = max(cfg.EMBEDDING_BATCH_SIZE, 64)
+        else:
+            self._encode_batch_size = cfg.EMBEDDING_BATCH_SIZE
+        if self._encode_batch_size != cfg.EMBEDDING_BATCH_SIZE:
+            print(
+                f"Embedding batch size: config={cfg.EMBEDDING_BATCH_SIZE} "
+                f"-> using {self._encode_batch_size} (GPU auto-scale)"
+            )
         self.content_index   = None
         self.sectionid_index = None
         self.metadata        = []
@@ -413,7 +425,7 @@ class VectorIndex:
             dim = self.model.get_sentence_embedding_dimension()
             return np.empty((0, dim), dtype=np.float32)
 
-        outer = max(cfg.EMBEDDING_BATCH_SIZE, cfg.EMBEDDING_ENCODE_CHUNK_SIZE)
+        outer = max(self._encode_batch_size, cfg.EMBEDDING_ENCODE_CHUNK_SIZE)
         starts = range(0, len(texts), outer)
 
         if cfg.EMBEDDING_SHOW_PROGRESS:
@@ -428,7 +440,7 @@ class VectorIndex:
                     batch,
                     show_progress_bar=False,
                     normalize_embeddings=True,
-                    batch_size=cfg.EMBEDDING_BATCH_SIZE,
+                    batch_size=self._encode_batch_size,
                     convert_to_numpy=True,
                 )
             vectors.append(np.asarray(encoded, dtype=np.float32))

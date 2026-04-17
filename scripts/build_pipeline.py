@@ -316,12 +316,31 @@ def _write_manifest(
     print(f"Saved build manifest -> {cfg.BUILD_MANIFEST_FILE}")
 
 
+def _print_device_summary() -> None:
+    """Print a one-line GPU/CPU summary so the user can see what hardware is active."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            name = torch.cuda.get_device_name(0)
+            vram = torch.cuda.get_device_properties(0).total_memory // (1024 ** 2)
+            print(f"GPU available : {name} ({vram} MB VRAM)  [embedding will use CUDA]")
+        else:
+            mps = getattr(getattr(torch, "backends", None), "mps", None)
+            if mps and mps.is_available():
+                print("GPU available : Apple MPS  [embedding will use MPS]")
+            else:
+                print("GPU available : none  [embedding will use CPU]")
+    except ImportError:
+        print("GPU available : torch not found  [CPU only]")
+
+
 def main() -> None:
     cfg.DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
-    print(f"Using knowledge profile: {cfg.KNOWLEDGE_PROFILE}")
+    print(f"Using knowledge profile : {cfg.KNOWLEDGE_PROFILE}")
     print(f"Using knowledge directory: {cfg.KNOWLEDGE_DIR}")
-    print(f"Using output directory : {cfg.DATA_PROCESSED}")
+    print(f"Using output directory  : {cfg.DATA_PROCESSED}")
+    _print_device_summary()
 
     if not cfg.USC26_XML.exists():
         raise FileNotFoundError(
@@ -380,11 +399,12 @@ def main() -> None:
             "version": _VECTOR_STAGE_VERSION,
             "chunks_hash": chunks_hash,
             "embedding_model": cfg.EMBEDDING_MODEL,
-            "embedding_device": cfg.EMBEDDING_DEVICE,
-            "embedding_threads": cfg.EMBEDDING_THREADS,
-            "embedding_batch_size": cfg.EMBEDDING_BATCH_SIZE,
-            "embedding_encode_chunk_size": cfg.EMBEDDING_ENCODE_CHUNK_SIZE,
+            # embedding_device is intentionally "auto" so fingerprint is stable
+            # across desktop/laptop — embeddings are bit-identical on CPU vs GPU.
             "dual_vector_embedding": cfg.DUAL_VECTOR_EMBEDDING,
+            # Batch size and encode chunk size are throughput knobs only;
+            # they do not affect embedding values so are excluded from the
+            # fingerprint (changing them no longer forces a full re-embed).
         }
     )
 
@@ -403,6 +423,11 @@ def main() -> None:
     else:
         print("Building FAISS vector index...")
         vector_idx = VectorIndex(cfg.EMBEDDING_MODEL)
+        print(
+            f"  Embedding device : {vector_idx.embedding_device}"
+            f"  |  batch size: {vector_idx._encode_batch_size}"
+            f"  |  model: {cfg.EMBEDDING_MODEL}"
+        )
         vector_idx.build(all_chunks)
         vector_idx.save(
             cfg.VECTOR_CONTENT_INDEX,
