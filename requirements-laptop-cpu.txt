@@ -11,7 +11,7 @@
 #   VECTOR_SEARCH_BACKEND=faiss
 #   EMBEDDING_DEVICE=cpu
 #   OLLAMA_NUM_GPU=0           # Intel Mac has no compatible GPU; skip GPU offload
-#   OLLAMA_NUM_CTX=2048        # smaller context → faster CPU prefill
+#   OLLAMA_NUM_CTX=8192        # none/label modes fit in 8192; vector needs more but CPU is slow anyway
 #   OLLAMA_TIMEOUT_SECONDS=300 # CPU inference is slower; allow more time per call
 #
 # Ollama setup on macOS:

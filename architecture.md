@@ -158,11 +158,52 @@ Evaluation supports four retrieval modes per model:
 
 Key runtime details in evaluation/run_eval.py:
 
-- depth is wired through retrieval calls from config
 - retrieved chunks are deduped by section_id before prompting
-- excerpts are clipped to a configurable maximum size
-- SARA retrieval query can exclude case body text by default to reduce noise
-- model and judge CLI support direct ollama model ids via ollama:model_name
+- excerpts are clipped to `PROMPT_EXCERPT_MAX_CHARS` (default 1000 chars)
+- SARA retrieval query excludes case body text by default to reduce noise
+- model and judge CLI accept `ollama:<model-name>` for direct local model selection
+- all Ollama requests include `num_gpu=OLLAMA_NUM_GPU` (default 99) to force GPU offload
+- set `OLLAMA_NUM_CTX=16384` on desktop GPU / `8192` on laptop CPU to avoid response truncation
+
+### SARA-specific prompt flow
+
+```text
+%Text (natural language facts)
+      +
+%Facts (statutory Prolog predicates only — NLP span annotations stripped)
+  e.g.  s63("Alice",2017,554313)  →  Alice's §63 income in 2017 = $554,313
+      +
+Question + type-specific step guidance
+  label:   What exact condition does the law impose? / Do the facts satisfy it?
+  numeric: State the formula / Substitute values / Show arithmetic
+  string:  What does the law define? / Which facts apply?
+      +
+System: three-step reasoning format — Final Answer is mandatory
+        Step 1 — Legal Rule: exact condition from the statute
+        Step 2 — Facts Applied: map each fact to the condition
+        Step 3 — Reasoning: why facts do/do not satisfy the rule
+        Final Answer: <value-or-label>
+```
+
+Output is capped per answer type:
+
+| Type    | `SARA_MAX_TOKENS_*` default |
+| ------- | --------------------------- |
+| label   | 4000                        |
+| numeric | 5000                        |
+| string  | 4000                        |
+| default | 4000                        |
+
+### Incremental saving and resume
+
+Each case result is appended to a `.partial.jsonl` file immediately after
+completion. On re-run with the same command, already-done cases are loaded from
+the partial file and skipped. `--overwrite` clears the partial and restarts.
+
+```text
+evaluation/results/<name>__<model>__<mode>.partial.jsonl   ← per-case progress
+evaluation/results/<name>__<model>__<mode>.json            ← written on completion
+```
 
 ---
 

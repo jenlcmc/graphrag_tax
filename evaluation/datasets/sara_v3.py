@@ -149,6 +149,25 @@ def _label_from_case_stem(case_stem: str) -> str | None:
     return None
 
 
+_STATUTORY_PRED_RE = re.compile(r"^s[a-zA-Z0-9]+\s*\(", re.ASCII)
+
+
+def _filter_statutory_facts(facts_text: str) -> str:
+    """Return only statutory predicate lines from %Facts, dropping NLP span annotations.
+
+    Keeps lines like: s151("Alice",2000,_,_,2017).
+    Drops directives (:- ...) and SRL span predicates (payment_(span(...))).
+    """
+    kept: list[str] = []
+    for line in facts_text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(":-") or "span(" in stripped:
+            continue
+        if _STATUTORY_PRED_RE.match(stripped):
+            kept.append(stripped)
+    return "\n".join(kept)
+
+
 def _split_prolog_clauses(lines: list[str]) -> list[str]:
     """Split Prolog lines into complete clauses ending in a period."""
     clauses: list[str] = []
@@ -356,7 +375,7 @@ def _parse_case_file(path: Path) -> dict:
                 test_lines.append(content)
 
     context_text = " ".join(text_lines).strip()
-    facts_text = "\n".join(facts_lines).strip()
+    facts_text = _filter_statutory_facts("\n".join(facts_lines))
     question_raw = " ".join(question_lines).strip()
 
     expected = ""
@@ -451,6 +470,37 @@ def _compute_rouge(prediction: str, reference: str) -> dict:
     }
 
 
+_SECTION_KEY_RE = re.compile(r"^(s\d+|tax_case)", re.IGNORECASE)
+
+# Map case-id prefix to the statute source filenames that are authoritative for it.
+# tax_case_* needs all four sections for full tax calculation.
+_CASE_PREFIX_TO_STATUTES: dict[str, list[str]] = {
+    "s1_":    ["section1"],
+    "s2_":    ["section2"],
+    "s63_":   ["section63"],
+    "s68_":   ["section68"],
+    "s151_":  ["section151"],
+    "s152_":  ["section152"],
+    "s3301_": ["section3301"],
+    "s3306_": ["section3306"],
+    "s7703_": ["section7703"],
+    "tax_case_": ["section1", "section2", "section63", "section68", "section151", "section3301", "section3306"],
+}
+
+
+def _load_sara_statutes(case_id: str, statutes_dir: Path) -> str:
+    """Return the concatenated text of SARA source statutes relevant to case_id."""
+    for prefix, filenames in _CASE_PREFIX_TO_STATUTES.items():
+        if case_id.startswith(prefix):
+            parts: list[str] = []
+            for fname in filenames:
+                fpath = statutes_dir / fname
+                if fpath.exists():
+                    parts.append(fpath.read_text(encoding="utf-8").strip())
+            return "\n\n---\n\n".join(parts)
+    return ""
+
+
 class SARAV3Dataset(Dataset):
     """Adapter for dataset/sara_v3."""
 
@@ -460,6 +510,7 @@ class SARAV3Dataset(Dataset):
         root = data_dir / "sara_v3"
         cases_dir = root / "cases"
         splits_dir = root / "splits"
+        statutes_dir = root / "statutes" / "source"
 
         split = os.getenv("SARA_SPLIT", "test").strip().lower() or "test"
         split_file = splits_dir / split
@@ -488,6 +539,7 @@ class SARAV3Dataset(Dataset):
             expected_type = parsed["expected_type"]
 
             relevant_ids = extract_usc_refs(f"{context_text}\n{facts_text}\n{question}")
+            sara_statutes = _load_sara_statutes(case_id, statutes_dir) if statutes_dir.exists() else ""
 
             cases.append(
                 EvalCase(
@@ -504,6 +556,7 @@ class SARAV3Dataset(Dataset):
                         "test_goal_negated": parsed["test_goal_negated"],
                         "test_goal_numbers": parsed["test_goal_numbers"],
                         "split": split,
+                        "sara_statutes": sara_statutes,
                     },
                 )
             )

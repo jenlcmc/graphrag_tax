@@ -1,0 +1,581 @@
+(cs789) PS C:\Users\utran\Desktop\cs789\graphrag_tax> $env:OLLAMA_TIMEOUT_SECONDS="240"
+>> $env:OLLAMA_MAX_RETRIES="2"
+>> $env:OLLAMA_RETRY_BACKOFF_SECONDS="2"
+>> $env:SARA_SPLIT="test"
+>> 
+>> python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama  --data-dir ../dataset/sara_v3            
+Loaded 120 cases from 'sara_v3'
+Loading retriever... Embedding device resolved: requested 'auto' -> using 'cuda'
+ready.
+
+--- sara_v3 | model=ollama:qwen3.5:2b | mode=none ---
+  [1/120] s151_d_1_neg
+  [2/120] s151_d_1_pos
+  [3/120] s151_d_3_A_neg
+  [4/120] s151_d_3_A_pos
+  [5/120] s151_d_5_neg
+  [6/120] s151_d_5_pos
+  [7/120] s152_a_neg
+  [8/120] s152_a_pos
+  [9/120] s152_c_2_A_neg
+  [10/120] s152_c_2_A_pos
+  [11/120] s152_d_1_D_neg
+  [12/120] s152_d_1_D_pos
+  [13/120] s152_d_2_A_neg
+  [14/120] s152_d_2_A_pos
+  [15/120] s152_d_2_C_neg
+  [16/120] s152_d_2_C_pos
+  [17/120] s152_d_2_G_neg
+  [18/120] s152_d_2_G_pos
+  [19/120] s152_d_2_H_neg
+  [20/120] s152_d_2_H_pos
+  [21/120] s1_a_2_iv_neg
+  [22/120] s1_a_2_iv_pos
+  [23/120] s1_a_2_neg
+  [24/120] s1_a_2_pos
+  [25/120] s1_a_2_v_neg
+  [26/120] s1_a_2_v_pos
+  [27/120] s1_b_i_neg
+  [28/120] s1_b_i_pos
+  [29/120] s1_b_neg
+  [30/120] s1_b_pos
+  [31/120] s1_c_iii_neg
+  [32/120] s1_c_iii_pos
+  [33/120] s1_c_neg
+  [34/120] s1_c_pos
+  [35/120] s1_d_i_neg
+  [36/120] s1_d_i_pos
+  [37/120] s1_d_ii_neg
+  [38/120] s1_d_ii_pos
+  [39/120] s1_d_neg
+  [40/120] s1_d_pos
+  [41/120] s2_a_1_B_neg
+  [42/120] s2_a_1_B_pos
+  [43/120] s2_b_1_A_i_II_neg
+  [44/120] s2_b_1_A_i_II_pos
+  [45/120] s2_b_1_A_i_I_neg
+  [46/120] s2_b_1_A_i_I_pos
+  [47/120] s2_b_1_A_i_neg
+  [48/120] s2_b_1_A_i_pos
+  [49/120] s2_b_1_A_ii_neg
+  [50/120] s2_b_1_A_ii_pos
+  [51/120] s2_b_3_A_neg
+  [52/120] s2_b_3_A_pos
+  [53/120] s3301_neg
+  [54/120] s3301_pos
+  [55/120] s3306_a_1_B_neg
+  [56/120] s3306_a_1_B_pos
+  [57/120] s3306_a_3_neg
+  [58/120] s3306_a_3_pos
+  [59/120] s3306_b_2_C_neg
+  [60/120] s3306_b_2_C_pos
+  [61/120] s3306_c_10_B_neg
+  [62/120] s3306_c_10_B_pos
+  [63/120] s3306_c_11_neg
+  [64/120] s3306_c_11_pos
+  [65/120] s3306_c_16_neg
+  [66/120] s3306_c_16_pos
+  [67/120] s3306_c_1_B_neg
+  [68/120] s3306_c_1_B_pos
+  [69/120] s3306_c_6_neg
+  [70/120] s3306_c_6_pos
+  [71/120] s3306_c_7_neg
+  [72/120] s3306_c_7_pos
+  [73/120] s3306_c_B_neg
+  [74/120] s3306_c_B_pos
+  [75/120] s63_b_neg
+  [76/120] s63_b_pos
+  [77/120] s63_c_2_A_i_neg
+  [78/120] s63_c_2_A_i_pos
+  [79/120] s63_c_2_A_ii_neg
+  [80/120] s63_c_2_A_ii_pos
+  [81/120] s63_c_6_B_neg
+  [82/120] s63_c_6_B_pos
+  [83/120] s63_c_6_D_neg
+  [84/120] s63_c_6_D_pos
+  [85/120] s63_c_7_i_neg
+  [86/120] s63_c_7_i_pos
+  [87/120] s63_f_1_A_neg
+  [88/120] s63_f_1_A_pos
+  [89/120] s63_f_2_B_neg
+  [90/120] s63_f_2_B_pos
+  [91/120] s68_a_2_neg
+  [92/120] s68_a_2_pos
+  [93/120] s68_b_1_B_neg
+  [94/120] s68_b_1_B_pos
+  [95/120] s68_b_1_C_neg
+  [96/120] s68_b_1_C_pos
+  [97/120] s7703_a_1_neg
+  [98/120] s7703_a_1_pos
+  [99/120] s7703_b_2_neg
+  [100/120] s7703_b_2_pos
+  [101/120] tax_case_28
+  [102/120] tax_case_30
+  [103/120] tax_case_31
+  [104/120] tax_case_34
+  [105/120] tax_case_43
+  [106/120] tax_case_46
+    Ollama timeout (attempt 1/2); retrying in 2s...
+  [107/120] tax_case_48
+  [108/120] tax_case_49
+  [109/120] tax_case_53
+  [110/120] tax_case_57
+  [111/120] tax_case_68
+  [112/120] tax_case_69
+  [113/120] tax_case_75
+  [114/120] tax_case_77
+  [115/120] tax_case_78
+  [116/120] tax_case_82
+  [117/120] tax_case_85
+  [118/120] tax_case_9
+  [119/120] tax_case_90
+  [120/120] tax_case_93
+  Judge score : 57.87 / 120.00  (48.2%)  [120/120 cases]
+  rouge1  : 0.0022  (avg over 120 cases)
+  rouge2  : 0.0000  (avg over 120 cases)
+  rougeL  : 0.0022  (avg over 120 cases)
+  citation_precision: 0.0000  (avg over 119 cited cases)
+  grounding_rate: 0.0000  (avg over 119 citation-bearing cases)
+  answer_correct: 0.3667  (avg over 120 cases)
+  calc_steps: 1.0000  (avg over 20 cases)
+  citation_fact_precision: 0.7006  (avg over 120 cases)
+  citation_fact_recall: 0.9717  (avg over 100 cases)
+  unknown_label_rate: 0.0000  (avg over 100 label cases)
+  Saved -> C:\Users\utran\Desktop\cs789\graphrag_tax\evaluation\results\sara_v3__ollama__none.json
+
+--- sara_v3 | model=ollama:qwen3.5:2b | mode=vector ---
+  [1/120] s151_d_1_neg
+  [2/120] s151_d_1_pos
+  [3/120] s151_d_3_A_neg
+  [4/120] s151_d_3_A_pos
+  [5/120] s151_d_5_neg
+  [6/120] s151_d_5_pos
+  [7/120] s152_a_neg
+  [8/120] s152_a_pos
+  [9/120] s152_c_2_A_neg
+  [10/120] s152_c_2_A_pos
+  [11/120] s152_d_1_D_neg
+  [12/120] s152_d_1_D_pos
+  [13/120] s152_d_2_A_neg
+  [14/120] s152_d_2_A_pos
+  [15/120] s152_d_2_C_neg
+  [16/120] s152_d_2_C_pos
+  [17/120] s152_d_2_G_neg
+  [18/120] s152_d_2_G_pos
+  [19/120] s152_d_2_H_neg
+  [20/120] s152_d_2_H_pos
+  [21/120] s1_a_2_iv_neg
+  [22/120] s1_a_2_iv_pos
+  [23/120] s1_a_2_neg
+  [24/120] s1_a_2_pos
+  [25/120] s1_a_2_v_neg
+  [26/120] s1_a_2_v_pos
+  [27/120] s1_b_i_neg
+  [28/120] s1_b_i_pos
+  [29/120] s1_b_neg
+  [30/120] s1_b_pos
+  [31/120] s1_c_iii_neg
+  [32/120] s1_c_iii_pos
+  [33/120] s1_c_neg
+  [34/120] s1_c_pos
+  [35/120] s1_d_i_neg
+  [36/120] s1_d_i_pos
+  [37/120] s1_d_ii_neg
+  [38/120] s1_d_ii_pos
+  [39/120] s1_d_neg
+  [40/120] s1_d_pos
+  [41/120] s2_a_1_B_neg
+  [42/120] s2_a_1_B_pos
+  [43/120] s2_b_1_A_i_II_neg
+  [44/120] s2_b_1_A_i_II_pos
+  [45/120] s2_b_1_A_i_I_neg
+  [46/120] s2_b_1_A_i_I_pos
+  [47/120] s2_b_1_A_i_neg
+  [48/120] s2_b_1_A_i_pos
+  [49/120] s2_b_1_A_ii_neg
+  [50/120] s2_b_1_A_ii_pos
+  [51/120] s2_b_3_A_neg
+  [52/120] s2_b_3_A_pos
+  [53/120] s3301_neg
+  [54/120] s3301_pos
+  [55/120] s3306_a_1_B_neg
+  [56/120] s3306_a_1_B_pos
+  [57/120] s3306_a_3_neg
+  [58/120] s3306_a_3_pos
+  [59/120] s3306_b_2_C_neg
+  [60/120] s3306_b_2_C_pos
+  [61/120] s3306_c_10_B_neg
+  [62/120] s3306_c_10_B_pos
+  [63/120] s3306_c_11_neg
+  [64/120] s3306_c_11_pos
+  [65/120] s3306_c_16_neg
+  [66/120] s3306_c_16_pos
+  [67/120] s3306_c_1_B_neg
+  [68/120] s3306_c_1_B_pos
+  [69/120] s3306_c_6_neg
+  [70/120] s3306_c_6_pos
+  [71/120] s3306_c_7_neg
+  [72/120] s3306_c_7_pos
+  [73/120] s3306_c_B_neg
+  [74/120] s3306_c_B_pos
+  [75/120] s63_b_neg
+  [76/120] s63_b_pos
+  [77/120] s63_c_2_A_i_neg
+  [78/120] s63_c_2_A_i_pos
+  [79/120] s63_c_2_A_ii_neg
+  [80/120] s63_c_2_A_ii_pos
+  [81/120] s63_c_6_B_neg
+  [82/120] s63_c_6_B_pos
+  [83/120] s63_c_6_D_neg
+  [84/120] s63_c_6_D_pos
+  [85/120] s63_c_7_i_neg
+  [86/120] s63_c_7_i_pos
+  [87/120] s63_f_1_A_neg
+  [88/120] s63_f_1_A_pos
+  [89/120] s63_f_2_B_neg
+  [90/120] s63_f_2_B_pos
+  [91/120] s68_a_2_neg
+  [92/120] s68_a_2_pos
+  [93/120] s68_b_1_B_neg
+  [94/120] s68_b_1_B_pos
+  [95/120] s68_b_1_C_neg
+  [96/120] s68_b_1_C_pos
+  [97/120] s7703_a_1_neg
+  [98/120] s7703_a_1_pos
+  [99/120] s7703_b_2_neg
+  [100/120] s7703_b_2_pos
+  [101/120] tax_case_28
+  [102/120] tax_case_30
+  [103/120] tax_case_31
+  [104/120] tax_case_34
+  [105/120] tax_case_43
+  [106/120] tax_case_46
+  [107/120] tax_case_48
+  [108/120] tax_case_49
+  [109/120] tax_case_53
+  [110/120] tax_case_57
+  [111/120] tax_case_68
+  [112/120] tax_case_69
+  [113/120] tax_case_75
+  [114/120] tax_case_77
+  [115/120] tax_case_78
+  [116/120] tax_case_82
+  [117/120] tax_case_85
+  [118/120] tax_case_9
+  [119/120] tax_case_90
+  [120/120] tax_case_93
+  Judge score : 68.04 / 120.00  (56.7%)  [120/120 cases]
+  rouge1  : 0.0022  (avg over 120 cases)
+  rouge2  : 0.0000  (avg over 120 cases)
+  rougeL  : 0.0022  (avg over 120 cases)
+  recall@k(hier): 0.2242  (avg over 100 cases)
+  MRR(hier)   : 0.1298  (avg over 100 cases)
+  recall@k(exact): 0.0550  (avg over 100 cases)
+  MRR(exact)   : 0.0261  (avg over 100 cases)
+  source_recall: 0.9500  (avg over 100 cases)
+  source_recall_by_source: usc26:0.95
+  citation_precision: 0.1565  (avg over 115 cited cases)
+  grounding_rate: 0.1714  (avg over 112 citation-bearing cases)
+  answer_correct: 0.5167  (avg over 120 cases)
+  calc_steps: 1.0000  (avg over 20 cases)
+  citation_fact_precision: 0.6129  (avg over 120 cases)
+  citation_fact_recall: 0.9817  (avg over 100 cases)
+  unknown_label_rate: 0.0100  (avg over 100 label cases)
+  Saved -> C:\Users\utran\Desktop\cs789\graphrag_tax\evaluation\results\sara_v3__ollama__vector.json
+
+--- sara_v3 | model=ollama:qwen3.5:2b | mode=graph ---
+  [1/120] s151_d_1_neg
+  [2/120] s151_d_1_pos
+  [3/120] s151_d_3_A_neg
+  [4/120] s151_d_3_A_pos
+  [5/120] s151_d_5_neg
+  [6/120] s151_d_5_pos
+  [7/120] s152_a_neg
+  [8/120] s152_a_pos
+  [9/120] s152_c_2_A_neg
+  [10/120] s152_c_2_A_pos
+  [11/120] s152_d_1_D_neg
+  [12/120] s152_d_1_D_pos
+  [13/120] s152_d_2_A_neg
+  [14/120] s152_d_2_A_pos
+  [15/120] s152_d_2_C_neg
+  [16/120] s152_d_2_C_pos
+  [17/120] s152_d_2_G_neg
+  [18/120] s152_d_2_G_pos
+  [19/120] s152_d_2_H_neg
+  [20/120] s152_d_2_H_pos
+  [21/120] s1_a_2_iv_neg
+  [22/120] s1_a_2_iv_pos
+  [23/120] s1_a_2_neg
+  [24/120] s1_a_2_pos
+  [25/120] s1_a_2_v_neg
+  [26/120] s1_a_2_v_pos
+    Ollama timeout (attempt 1/2); retrying in 2s...
+  [27/120] s1_b_i_neg
+  [28/120] s1_b_i_pos
+  [29/120] s1_b_neg
+  [30/120] s1_b_pos
+  [31/120] s1_c_iii_neg
+  [32/120] s1_c_iii_pos
+  [33/120] s1_c_neg
+  [34/120] s1_c_pos
+  [35/120] s1_d_i_neg
+  [36/120] s1_d_i_pos
+  [37/120] s1_d_ii_neg
+  [38/120] s1_d_ii_pos
+  [39/120] s1_d_neg
+  [40/120] s1_d_pos
+  [41/120] s2_a_1_B_neg
+  [42/120] s2_a_1_B_pos
+  [43/120] s2_b_1_A_i_II_neg
+  [44/120] s2_b_1_A_i_II_pos
+  [45/120] s2_b_1_A_i_I_neg
+  [46/120] s2_b_1_A_i_I_pos
+  [47/120] s2_b_1_A_i_neg
+  [48/120] s2_b_1_A_i_pos
+  [49/120] s2_b_1_A_ii_neg
+  [50/120] s2_b_1_A_ii_pos
+  [51/120] s2_b_3_A_neg
+  [52/120] s2_b_3_A_pos
+  [53/120] s3301_neg
+  [54/120] s3301_pos
+  [55/120] s3306_a_1_B_neg
+  [56/120] s3306_a_1_B_pos
+  [57/120] s3306_a_3_neg
+  [58/120] s3306_a_3_pos
+  [59/120] s3306_b_2_C_neg
+  [60/120] s3306_b_2_C_pos
+  [61/120] s3306_c_10_B_neg
+  [62/120] s3306_c_10_B_pos
+  [63/120] s3306_c_11_neg
+  [64/120] s3306_c_11_pos
+  [65/120] s3306_c_16_neg
+  [66/120] s3306_c_16_pos
+  [67/120] s3306_c_1_B_neg
+  [68/120] s3306_c_1_B_pos
+  [69/120] s3306_c_6_neg
+  [70/120] s3306_c_6_pos
+  [71/120] s3306_c_7_neg
+  [72/120] s3306_c_7_pos
+  [73/120] s3306_c_B_neg
+  [74/120] s3306_c_B_pos
+  [75/120] s63_b_neg
+  [76/120] s63_b_pos
+  [77/120] s63_c_2_A_i_neg
+  [78/120] s63_c_2_A_i_pos
+  [79/120] s63_c_2_A_ii_neg
+  [80/120] s63_c_2_A_ii_pos
+  [81/120] s63_c_6_B_neg
+  [82/120] s63_c_6_B_pos
+  [83/120] s63_c_6_D_neg
+  [84/120] s63_c_6_D_pos
+  [85/120] s63_c_7_i_neg
+  [86/120] s63_c_7_i_pos
+  [87/120] s63_f_1_A_neg
+  [88/120] s63_f_1_A_pos
+  [89/120] s63_f_2_B_neg
+  [90/120] s63_f_2_B_pos
+  [91/120] s68_a_2_neg
+  [92/120] s68_a_2_pos
+  [93/120] s68_b_1_B_neg
+  [94/120] s68_b_1_B_pos
+  [95/120] s68_b_1_C_neg
+  [96/120] s68_b_1_C_pos
+  [97/120] s7703_a_1_neg
+  [98/120] s7703_a_1_pos
+  [99/120] s7703_b_2_neg
+  [100/120] s7703_b_2_pos
+  [101/120] tax_case_28
+  [102/120] tax_case_30
+  [103/120] tax_case_31
+  [104/120] tax_case_34
+  [105/120] tax_case_43
+  [106/120] tax_case_46
+  [107/120] tax_case_48
+  [108/120] tax_case_49
+  [109/120] tax_case_53
+  [110/120] tax_case_57
+  [111/120] tax_case_68
+  [112/120] tax_case_69
+  [113/120] tax_case_75
+  [114/120] tax_case_77
+  [115/120] tax_case_78
+  [116/120] tax_case_82
+  [117/120] tax_case_85
+  [118/120] tax_case_9
+  [119/120] tax_case_90
+  [120/120] tax_case_93
+  Judge score : 59.54 / 120.00  (49.6%)  [120/120 cases]
+  rouge1  : 0.0023  (avg over 120 cases)
+  rouge2  : 0.0000  (avg over 120 cases)
+  rougeL  : 0.0023  (avg over 120 cases)
+  recall@k(hier): 0.4462  (avg over 100 cases)
+  MRR(hier)   : 0.2971  (avg over 100 cases)
+  recall@k(exact): 0.1433  (avg over 100 cases)
+  MRR(exact)   : 0.1383  (avg over 100 cases)
+  source_recall: 1.0000  (avg over 100 cases)
+  source_recall_by_source: usc26:1.00
+  citation_precision: 0.2155  (avg over 119 cited cases)
+  grounding_rate: 0.2223  (avg over 119 citation-bearing cases)
+  answer_correct: 0.4000  (avg over 120 cases)
+  calc_steps: 1.0000  (avg over 20 cases)
+  citation_fact_precision: 0.6531  (avg over 120 cases)
+  citation_fact_recall: 0.9667  (avg over 100 cases)
+  unknown_label_rate: 0.0000  (avg over 100 label cases)
+  Saved -> C:\Users\utran\Desktop\cs789\graphrag_tax\evaluation\results\sara_v3__ollama__graph.json
+
+--- sara_v3 | model=ollama:qwen3.5:2b | mode=hybrid ---
+  [1/120] s151_d_1_neg
+  [2/120] s151_d_1_pos
+  [3/120] s151_d_3_A_neg
+  [4/120] s151_d_3_A_pos
+  [5/120] s151_d_5_neg
+  [6/120] s151_d_5_pos
+  [7/120] s152_a_neg
+  [8/120] s152_a_pos
+  [9/120] s152_c_2_A_neg
+  [10/120] s152_c_2_A_pos
+  [11/120] s152_d_1_D_neg
+  [12/120] s152_d_1_D_pos
+  [13/120] s152_d_2_A_neg
+  [14/120] s152_d_2_A_pos
+  [15/120] s152_d_2_C_neg
+  [16/120] s152_d_2_C_pos
+  [17/120] s152_d_2_G_neg
+  [18/120] s152_d_2_G_pos
+  [19/120] s152_d_2_H_neg
+  [20/120] s152_d_2_H_pos
+  [21/120] s1_a_2_iv_neg
+  [22/120] s1_a_2_iv_pos
+  [23/120] s1_a_2_neg
+  [24/120] s1_a_2_pos
+  [25/120] s1_a_2_v_neg
+  [26/120] s1_a_2_v_pos
+  [27/120] s1_b_i_neg
+  [28/120] s1_b_i_pos
+  [29/120] s1_b_neg
+  [30/120] s1_b_pos
+  [31/120] s1_c_iii_neg
+  [32/120] s1_c_iii_pos
+  [33/120] s1_c_neg
+  [34/120] s1_c_pos
+  [35/120] s1_d_i_neg
+  [36/120] s1_d_i_pos
+  [37/120] s1_d_ii_neg
+  [38/120] s1_d_ii_pos
+  [39/120] s1_d_neg
+  [40/120] s1_d_pos
+  [41/120] s2_a_1_B_neg
+  [42/120] s2_a_1_B_pos
+  [43/120] s2_b_1_A_i_II_neg
+  [44/120] s2_b_1_A_i_II_pos
+  [45/120] s2_b_1_A_i_I_neg
+  [46/120] s2_b_1_A_i_I_pos
+  [47/120] s2_b_1_A_i_neg
+  [48/120] s2_b_1_A_i_pos
+  [49/120] s2_b_1_A_ii_neg
+  [50/120] s2_b_1_A_ii_pos
+  [51/120] s2_b_3_A_neg
+  [52/120] s2_b_3_A_pos
+  [53/120] s3301_neg
+  [54/120] s3301_pos
+  [55/120] s3306_a_1_B_neg
+  [56/120] s3306_a_1_B_pos
+  [57/120] s3306_a_3_neg
+  [58/120] s3306_a_3_pos
+  [59/120] s3306_b_2_C_neg
+  [60/120] s3306_b_2_C_pos
+  [61/120] s3306_c_10_B_neg
+  [62/120] s3306_c_10_B_pos
+  [63/120] s3306_c_11_neg
+  [64/120] s3306_c_11_pos
+  [65/120] s3306_c_16_neg
+  [66/120] s3306_c_16_pos
+  [67/120] s3306_c_1_B_neg
+  [68/120] s3306_c_1_B_pos
+  [69/120] s3306_c_6_neg
+  [70/120] s3306_c_6_pos
+  [71/120] s3306_c_7_neg
+  [72/120] s3306_c_7_pos
+  [73/120] s3306_c_B_neg
+  [74/120] s3306_c_B_pos
+  [75/120] s63_b_neg
+  [76/120] s63_b_pos
+  [77/120] s63_c_2_A_i_neg
+  [78/120] s63_c_2_A_i_pos
+  [79/120] s63_c_2_A_ii_neg
+  [80/120] s63_c_2_A_ii_pos
+  [81/120] s63_c_6_B_neg
+  [82/120] s63_c_6_B_pos
+  [83/120] s63_c_6_D_neg
+  [84/120] s63_c_6_D_pos
+  [85/120] s63_c_7_i_neg
+  [86/120] s63_c_7_i_pos
+  [87/120] s63_f_1_A_neg
+  [88/120] s63_f_1_A_pos
+  [89/120] s63_f_2_B_neg
+  [90/120] s63_f_2_B_pos
+  [91/120] s68_a_2_neg
+  [92/120] s68_a_2_pos
+  [93/120] s68_b_1_B_neg
+  [94/120] s68_b_1_B_pos
+  [95/120] s68_b_1_C_neg
+  [96/120] s68_b_1_C_pos
+  [97/120] s7703_a_1_neg
+  [98/120] s7703_a_1_pos
+  [99/120] s7703_b_2_neg
+  [100/120] s7703_b_2_pos
+  [101/120] tax_case_28
+  [102/120] tax_case_30
+  [103/120] tax_case_31
+  [104/120] tax_case_34
+  [105/120] tax_case_43
+  [106/120] tax_case_46
+  [107/120] tax_case_48
+  [108/120] tax_case_49
+  [109/120] tax_case_53
+  [110/120] tax_case_57
+  [111/120] tax_case_68
+  [112/120] tax_case_69
+  [113/120] tax_case_75
+  [114/120] tax_case_77
+  [115/120] tax_case_78
+  [116/120] tax_case_82
+  [117/120] tax_case_85
+  [118/120] tax_case_9
+  [119/120] tax_case_90
+  [120/120] tax_case_93
+  Judge score : 62.83 / 120.00  (52.4%)  [120/120 cases]
+  rouge1  : 0.0025  (avg over 120 cases)
+  rouge2  : 0.0000  (avg over 120 cases)
+  rougeL  : 0.0025  (avg over 120 cases)
+  recall@k(hier): 0.4512  (avg over 100 cases)
+  MRR(hier)   : 0.3497  (avg over 100 cases)
+  recall@k(exact): 0.1433  (avg over 100 cases)
+  MRR(exact)   : 0.1177  (avg over 100 cases)
+  source_recall: 1.0000  (avg over 100 cases)
+  source_recall_by_source: usc26:1.00
+  citation_precision: 0.2913  (avg over 119 cited cases)
+  grounding_rate: 0.2921  (avg over 119 citation-bearing cases)
+  answer_correct: 0.4750  (avg over 120 cases)
+  calc_steps: 1.0000  (avg over 20 cases)
+  citation_fact_precision: 0.5376  (avg over 120 cases)
+  citation_fact_recall: 0.9733  (avg over 100 cases)
+  unknown_label_rate: 0.0000  (avg over 100 label cases)
+  Saved -> C:\Users\utran\Desktop\cs789\graphrag_tax\evaluation\results\sara_v3__ollama__hybrid.json
+
+=== Mode Comparison ===
+  none  : score_pct=48.2239, answer_correct=0.3667, unknown_label_rate=0.0000, calculation_steps_present=1.0000, citation_fact_precision=0.7006, citation_fact_recall=0.9717
+  vector: score_pct=56.6964, answer_correct=0.5167, unknown_label_rate=0.0100, calculation_steps_present=1.0000, citation_fact_precision=0.6129, citation_fact_recall=0.9817, recall_at_k=0.2242, mrr=0.1298, recall_at_k_exact=0.0550, mrr_exact=0.0261
+  graph : score_pct=49.6199, answer_correct=0.4000, unknown_label_rate=0.0000, calculation_steps_present=1.0000, citation_fact_precision=0.6531, citation_fact_recall=0.9667, recall_at_k=0.4462, mrr=0.2971, recall_at_k_exact=0.1433, mrr_exact=0.1383
+  hybrid: score_pct=52.3575, answer_correct=0.4750, unknown_label_rate=0.0000, calculation_steps_present=1.0000, citation_fact_precision=0.5376, citation_fact_recall=0.9733, recall_at_k=0.4512, mrr=0.3497, recall_at_k_exact=0.1433, mrr_exact=0.1177
+
+  Hybrid improvement vs none:
+    score_pct: +4.1336
+    answer_correct: +0.1083
+    unknown_label_rate: +0.0000
+    calculation_steps_present: +0.0000
+    citation_fact_precision: -0.1630
+    citation_fact_recall: +0.0017
+
+Done.

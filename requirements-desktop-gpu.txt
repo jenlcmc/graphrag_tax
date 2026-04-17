@@ -22,5 +22,6 @@
 #   EMBEDDING_DEVICE=cuda
 #   FAISS_USE_GPU=true
 #   OLLAMA_NUM_GPU=99          # already the default; forces all layers to GPU
-#   OLLAMA_NUM_CTX=4096        # smaller KV cache → more VRAM for model weights
+#   OLLAMA_NUM_CTX=16384       # must fit system+user prompt + up to 5000-token response
+#                              # vector mode with 10 chunks ~6-7k input; 16384 is safe
 #   EVAL_CONCURRENCY=1         # raise to 2 only if OLLAMA_NUM_PARALLEL=2 server-side

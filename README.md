@@ -534,8 +534,22 @@ $env:SARA_SPLIT="test"
 python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_sara_v3
 ```
 
-SARA runs now include a per-mode comparison summary with hybrid-vs-none deltas,
+SARA runs include a per-mode comparison summary with hybrid-vs-none deltas,
 so you can directly show the impact of adding GraphRAG context.
+
+#### SARA prompt structure
+
+Each case is presented to the LLM with three sections:
+
+1. **`%Text`** — natural language description of the taxpayer's situation
+2. **`%Facts`** — statutory Prolog predicates filtered to section-grounding facts
+   only (e.g. `s63("Alice",2017,554313)` = Alice's §63 taxable income in 2017
+   is $554,313). NLP span annotations are stripped before prompting.
+3. **Question** — the entailment/numeric/string query
+
+The model is required to produce a three-step reasoning trace before the final
+answer (Legal Rule → Facts Applied → Reasoning → Final Answer). Output tokens
+are capped per answer type via `SARA_MAX_TOKENS_*` to avoid wasteful generation.
 
 For local Ollama runs, timeout and retry behavior is configurable:
 
@@ -565,6 +579,29 @@ evaluation/results/taxbench__claude__hybrid.json
 evaluation/results/taxbench__claude__none.json
 evaluation/results/irs_form_qa__claude__hybrid.json
 ...
+```
+
+#### Incremental saving and resume
+
+Each case result is written to a `.partial.jsonl` file immediately after it
+completes (success or error). If the run is interrupted, the partial file
+survives:
+
+```text
+evaluation/results/sara_v3__ollama__hybrid.partial.jsonl   ← progress log
+evaluation/results/sara_v3__ollama__hybrid.json            ← written on completion
+```
+
+On the next run with the **same command**, already-completed case IDs are loaded
+from the partial file and skipped.  Only pending cases are sent to the LLM.
+Use `--overwrite` to clear the partial file and restart from scratch.
+
+```bash
+# Resume a stopped run — picks up where it left off automatically
+python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama
+
+# Restart from scratch
+python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --overwrite
 ```
 
 ### Adding a new dataset
@@ -685,21 +722,21 @@ All settings live in [src/config.py](src/config.py).
 | ------------------------------ | ------------------- | ------------------------------------------- |
 | `MAX_CHUNK_CHARS`              | 2000                | Chunk size cap                              |
 | `EMBEDDING_MODEL`              | `all-mpnet-base-v2` | `all-MiniLM-L6-v2` on Intel Mac             |
-| `TOP_K_VECTOR`                 | 10                  | Chunks returned per query                   |
+| `TOP_K_VECTOR`                 | 7                   | Chunks returned per query                   |
 | `BFS_DEPTH`                    | 2                   | Graph traversal hops                        |
 | `EXCLUDED_SOURCES`             | `{i1040nr, p519}`   | Non-resident sources, excluded              |
 | `LOW_RESOURCE_MODE`            | auto (Intel Mac)    | Smaller model + smaller batches             |
 | `OLLAMA_MODEL`                 | `qwen3.5:2b`        | Local model used when `--model ollama`      |
-| `OLLAMA_NUM_CTX`               | 0                   | Per-request context length (0 = model default) |
-| `OLLAMA_NUM_PREDICT`           | 0                   | Max output tokens (-1 or 0 = model/default behavior) |
+| `OLLAMA_NUM_CTX`               | 16384               | Context window; fits 10 chunks + long reply |
+| `OLLAMA_NUM_PREDICT`           | 0                   | Max output tokens; see SARA_MAX_TOKENS_*    |
 | `OLLAMA_TEMPERATURE`           | -1.0                | Sampling temperature (-1 = model default)   |
-| `OLLAMA_TOP_P`                 | -1.0                | Top-p sampling (0 or negative = model default) |
+| `OLLAMA_TOP_P`                 | -1.0                | Top-p sampling (-1 or 0 = model default)    |
 | `FAISS_USE_GPU`                | `True`              | Promote FAISS indexes to CUDA when possible |
 | `VECTOR_SEARCH_BACKEND`        | `auto`              | `auto`, `faiss`, or `torch`                 |
 | `VECTOR_TORCH_FP16`            | `True`              | fp16 torch CUDA search for speed            |
 | `VECTOR_SEARCH_SECTIONID`      | auto                | Section-id index search toggle              |
-| `HYBRID_ALPHA_DEFAULT`         | 0.6                 | Vector weight for broad/semantic queries    |
-| `HYBRID_ALPHA_SECTION_REF`     | 0.5                 | Vector weight when query cites explicit §   |
+| `HYBRID_ALPHA_DEFAULT`         | 0.35                | Graph-weighted blend; reduces IRS pub noise |
+| `HYBRID_ALPHA_SECTION_REF`     | 0.2                 | Vector weight when query cites explicit §   |
 | `HYBRID_SCORE_NORMALIZE`       | `True`              | Normalize channel scores before blending    |
 | `GRAPH_EDGE_WEIGHT_XREF`       | 3.0                 | BFS neighbor priority for xref edges        |
 | `GRAPH_EDGE_WEIGHT_COVERAGE`   | 1.8                 | BFS neighbor priority for coverage edges    |
@@ -708,7 +745,11 @@ All settings live in [src/config.py](src/config.py).
 | `GRAPH_USC_BOOST`              | 0.15                | Authority boost for USC26 nodes             |
 | `GRAPH_MAX_ENTRY_NODES`        | 24                  | Entry-node cap per graph query              |
 | `GRAPH_MAX_NEIGHBORS_PER_NODE` | 20                  | Frontier expansion cap per node             |
-| `PROMPT_EXCERPT_MAX_CHARS`     | 1000                | Retrieval snippet trim before prompting      |
+| `PROMPT_EXCERPT_MAX_CHARS`     | 1000                | Retrieval snippet trim before prompting     |
+| `SARA_MAX_TOKENS_LABEL`        | 4000                | Max output tokens for entailment cases      |
+| `SARA_MAX_TOKENS_NUMERIC`      | 5000                | Max output tokens for numeric calc cases    |
+| `SARA_MAX_TOKENS_STRING`       | 4000                | Max output tokens for string lookup cases   |
+| `SARA_MAX_TOKENS_DEFAULT`      | 4000                | Max output tokens for freeform cases        |
 
 To add a new IRS XML source: place its XML at `knowledge/<name>/<name>.xml`
 and add a display label to `src/ingestion/irs_xml_parser.SOURCE_LABELS`.

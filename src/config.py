@@ -160,7 +160,7 @@ VECTOR_SEARCH_BACKEND = os.getenv("VECTOR_SEARCH_BACKEND", "auto").strip().lower
 VECTOR_TORCH_FP16 = _env_bool("VECTOR_TORCH_FP16", True)
 # Skip section-id index search when dual-vector section embeddings are disabled.
 VECTOR_SEARCH_SECTIONID = _env_bool("VECTOR_SEARCH_SECTIONID", DUAL_VECTOR_EMBEDDING)
-TOP_K_VECTOR    = 10
+TOP_K_VECTOR    = 7
 BFS_DEPTH       = 2
 # Keep SARA retrieval query focused by default to reduce graph/vector noise.
 SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
@@ -196,10 +196,11 @@ GRAPH_COVERAGE_PENALTY_FALLBACK = _env_float("GRAPH_COVERAGE_PENALTY_FALLBACK", 
 # Hybrid retrieval blending
 # score = alpha * vector_score + (1 - alpha) * graph_score
 # --------------------------------------------------------------------------
-# Default: slightly vector-weighted for broad/semantic queries.
-HYBRID_ALPHA_DEFAULT: float = 0.6
-# When the query cites an explicit IRC § reference, lean on the graph more.
-HYBRID_ALPHA_SECTION_REF: float = 0.5
+# Graph-weighted: vector adds noisy IRS pub fragments on statute-focused queries.
+# With three-step reasoning prompts the model reads every chunk, so noise hurts.
+HYBRID_ALPHA_DEFAULT: float = 0.35
+# When the query cites an explicit IRC § reference, lean heavily on graph.
+HYBRID_ALPHA_SECTION_REF: float = 0.2
 # Cache merged retrieval results by (mode, query, k, depth).
 HYBRID_QUERY_CACHE_SIZE = max(0, _env_int("HYBRID_QUERY_CACHE_SIZE", 1024))
 # Normalize vector/graph scores before blending to reduce channel scale mismatch.
@@ -233,7 +234,7 @@ OLLAMA_RETRY_BACKOFF_SECONDS = _env_int("OLLAMA_RETRY_BACKOFF_SECONDS", 2)
 OLLAMA_THINK = _env_bool("OLLAMA_THINK", False)
 # Optional Ollama per-request generation controls.
 # Use 0 / negative sentinel defaults to leave the daemon model defaults unchanged.
-OLLAMA_NUM_CTX     = max(0, _env_int("OLLAMA_NUM_CTX", 0))
+OLLAMA_NUM_CTX     = max(0, _env_int("OLLAMA_NUM_CTX", 16384))
 OLLAMA_NUM_PREDICT = _env_int("OLLAMA_NUM_PREDICT", 0)
 OLLAMA_TEMPERATURE = _env_float("OLLAMA_TEMPERATURE", -1.0)
 OLLAMA_TOP_P       = _env_float("OLLAMA_TOP_P", -1.0)
@@ -252,10 +253,10 @@ EVAL_CONCURRENCY = max(1, _env_int("EVAL_CONCURRENCY", 1))
 # Per-answer-type token caps for SARA.
 # All types now require a three-step reasoning chain (Rule → Facts → Reasoning)
 # before the Final Answer, so label cases need more room than a bare label would.
-SARA_MAX_TOKENS_LABEL   = _env_int("SARA_MAX_TOKENS_LABEL",    600)
-SARA_MAX_TOKENS_NUMERIC = _env_int("SARA_MAX_TOKENS_NUMERIC",  900)
-SARA_MAX_TOKENS_STRING  = _env_int("SARA_MAX_TOKENS_STRING",   600)
-SARA_MAX_TOKENS_DEFAULT = _env_int("SARA_MAX_TOKENS_DEFAULT",  800)
+SARA_MAX_TOKENS_LABEL   = _env_int("SARA_MAX_TOKENS_LABEL",   4000)
+SARA_MAX_TOKENS_NUMERIC = _env_int("SARA_MAX_TOKENS_NUMERIC", 5000)
+SARA_MAX_TOKENS_STRING  = _env_int("SARA_MAX_TOKENS_STRING",  4000)
+SARA_MAX_TOKENS_DEFAULT = _env_int("SARA_MAX_TOKENS_DEFAULT", 4000)
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GEMINI_API_KEY    = os.getenv("GEMINI_API_KEY", "")

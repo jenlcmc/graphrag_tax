@@ -170,19 +170,17 @@ For every answer you must:
 
 _SARA_SYSTEM_APPEND = """\
 
-SARA-specific output format (required for all answer types):
+SARA output format — required for all answer types:
 
-Step 1 — Legal Rule: State the applicable rule from the cited statute or IRS \
-guidance. Quote or paraphrase the key condition directly.
-Step 2 — Facts Applied: Map each relevant case fact to the legal condition. \
-Show which facts satisfy or fail each condition.
+Step 1 — Legal Rule: State the exact condition the cited statute imposes.
+Step 2 — Facts Applied: Map each case fact to that condition — which facts satisfy it, which do not.
 Step 3 — Reasoning: Explain why the facts do or do not satisfy the rule.
 Final Answer: <value-or-label>
 
-Additional constraints:
+Constraints:
+- The Final Answer line is mandatory — write it even if the steps above are incomplete.
 - Use ONLY the provided case facts for taxpayer-specific values.
-- Cite ONLY section references that appear in the allowed citation list.
-- Every step must be present, even for simple cases.
+- Cite all relevant section references from the allowed citation list.
 """
 
 
@@ -242,42 +240,61 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
         label_options = _sara_label_options(case)
         label_choices = " / ".join(label_options)
         type_instructions = (
-            f"This is a legal entailment task. Follow the three-step format:\n"
-            f"  Step 1 — Legal Rule: What condition does the cited law impose?\n"
-            f"  Step 2 — Facts Applied: Which case facts satisfy or violate that condition?\n"
-            f"  Step 3 — Reasoning: Why does this lead to Entailment or Contradiction?\n"
-            f"  Final Answer must be exactly one of: {label_choices}"
+            f"This is a legal entailment task.\n"
+            f"Step 1 — Legal Rule: What exact condition does the cited law impose?\n"
+            f"Step 2 — Facts Applied: Do the case facts satisfy every condition?\n"
+            f"Step 3 — Reasoning: Why does this lead to entailment or contradiction?\n"
+            f"Final Answer must be exactly one of: {label_choices}"
         )
     elif expected_type == "numeric":
         type_instructions = (
-            "This is a numeric calculation task. Follow the three-step format:\n"
-            "  Step 1 — Legal Rule: State the formula or threshold from the cited law.\n"
-            "  Step 2 — Facts Applied: Plug in the case values.\n"
-            "  Step 3 — Arithmetic: Show every calculation step.\n"
-            "  Final Answer: <the numeric result>"
+            "This is a numeric calculation task.\n"
+            "IMPORTANT: Use ONLY the dollar amounts, rates, and thresholds from the "
+            "SARA Authoritative Statute Text provided above — do NOT use tax rates "
+            "from your training knowledge.\n"
+            "Step 1 — Legal Rule: Copy the exact formula or bracket table from the statute text above.\n"
+            "Step 2 — Facts Applied: Substitute each case value into the formula.\n"
+            "Step 3 — Arithmetic: Show every calculation step with actual numbers.\n"
+            "Final Answer must be a number (digits only, no $ sign, no commas)."
         )
     elif expected_type == "string":
         type_instructions = (
-            "This is a factual lookup task. Follow the three-step format:\n"
-            "  Step 1 — Legal Rule: What does the cited law say about this?\n"
-            "  Step 2 — Facts Applied: Which case details are relevant?\n"
-            "  Step 3 — Reasoning: How do you arrive at your answer?\n"
-            "  Final Answer: <the value>"
+            "This is a factual lookup task.\n"
+            "Step 1 — Legal Rule: What does the cited law define or provide?\n"
+            "Step 2 — Facts Applied: Which case details are relevant?\n"
+            "Step 3 — Reasoning: How do you arrive at the answer?\n"
+            "Final Answer must be the specific value."
         )
     else:
         type_instructions = (
-            "Follow the three-step format:\n"
-            "  Step 1 — Legal Rule: Identify and quote the relevant rule.\n"
-            "  Step 2 — Facts Applied: Apply the rule to the case facts.\n"
-            "  Step 3 — Reasoning: Explain your conclusion.\n"
-            "  Final Answer: <value-or-label>"
+            "Step 1 — Legal Rule: Identify the relevant rule.\n"
+            "Step 2 — Facts Applied: Apply it to the case facts.\n"
+            "Step 3 — Reasoning: Explain the conclusion.\n"
+            "Final Answer must be present."
         )
+
+    facts_block = (
+        "Statutory facts in Prolog notation — s<section>(<person>, <amount/status>, ..., <year>).\n"
+        "Example: s63(\"Alice\",2017,26948) means Alice's §63 taxable income in 2017 is $26,948.\n"
+        f"{structured_facts}"
+        if structured_facts
+        else "(no structured facts provided)"
+    )
+
+    sara_statutes = str(case.metadata.get("sara_statutes", "")).strip()
+    statute_block = (
+        "\nSARA Authoritative Statute Text (use these exact thresholds and formulas):\n"
+        f"{sara_statutes}\n"
+        if sara_statutes
+        else ""
+    )
 
     return (
         "SARA Case Text (%Text):\n"
         f"{text_context or '(no text context provided)'}\n\n"
         "SARA Structured Facts (%Facts):\n"
-        f"{structured_facts or '(no structured facts provided)'}\n\n"
+        f"{facts_block}\n"
+        f"{statute_block}\n"
         "Question:\n"
         f"{case.question}\n\n"
         "Allowed section citations:\n"
@@ -1083,81 +1100,113 @@ def main() -> None:
     args.results_dir.mkdir(parents=True, exist_ok=True)
     mode_summaries: dict[str, dict] = {}
     _print_lock = threading.Lock()
-
-    def _run_one(idx: int, total: int, case: EvalCase) -> tuple[int, dict]:
-        """Run one case and return (idx, result). Thread-safe."""
-        t0 = time.monotonic()
-        with _print_lock:
-            print(f"  [{idx}/{total}] {case.id[:50]}", flush=True)
-        try:
-            result = run_case(
-                case=case,
-                dataset=dataset,
-                retriever=retriever,
-                model_id=model_id,
-                mode=mode,
-                dry_run=args.dry_run,
-                judge_model_id=judge_id,
-                skip_scoring=args.skip_scoring,
-            )
-        except Exception as exc:
-            with _print_lock:
-                print(f"    [{idx}] ERROR: {exc}", flush=True)
-            result = {
-                "id": case.id,
-                "question": case.question,
-                "rubric": case.rubric,
-                "response": "",
-                "mode": mode,
-                "model": model_id,
-                "retrieved_ids": [],
-                "n_chunks": 0,
-                "retrieval_metrics": {},
-                "citation_metrics": {},
-                "scoring": {
-                    "earned": None,
-                    "total": None,
-                    "feedback": f"Case failed: {exc}",
-                    "_case_error": True,
-                },
-                "error": str(exc),
-            }
-        elapsed = time.monotonic() - t0
-        with _print_lock:
-            print(f"    [{idx}] done in {elapsed:.1f}s", flush=True)
-        return idx, result
+    # Map case_id → 1-based position in original cases list (for progress display)
+    _case_position = {c.id: i for i, c in enumerate(cases, 1)}
 
     for mode in modes:
         tag = "dryrun" if args.dry_run else args.model
         out_path = args.results_dir / f"{dataset.name}__{tag}__{mode}.json"
+        partial_path = out_path.with_suffix(".partial.jsonl")
 
-        if out_path.exists() and not args.overwrite:
-            print(f"Skipping {out_path.name} (already exists; use --overwrite)")
+        # --- Skip / resume / overwrite logic ---
+        if out_path.exists() and not partial_path.exists() and not args.overwrite:
+            print(f"Skipping {out_path.name} (already complete; use --overwrite to redo)")
             continue
 
-        print(f"\n--- {dataset.name} | model={model_id} | mode={mode} "
-              f"| workers={cfg.EVAL_CONCURRENCY} ---")
+        completed_results: dict[str, dict] = {}
+        if partial_path.exists() and not args.overwrite:
+            for line in partial_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if "id" in entry:
+                        completed_results[entry["id"]] = entry
+                except (json.JSONDecodeError, KeyError):
+                    pass
+            if completed_results:
+                print(f"  Resuming: {len(completed_results)}/{len(cases)} cases already done.")
+        elif args.overwrite:
+            partial_path.unlink(missing_ok=True)
+            if out_path.exists():
+                out_path.unlink()
 
+        pending = [c for c in cases if c.id not in completed_results]
         n = len(cases)
-        results_map: dict[int, dict] = {}
 
-        if cfg.EVAL_CONCURRENCY <= 1:
-            for idx, case in enumerate(cases, 1):
-                i, result = _run_one(idx, n, case)
-                results_map[i] = result
-        else:
-            with ThreadPoolExecutor(max_workers=cfg.EVAL_CONCURRENCY) as pool:
-                futures = {
-                    pool.submit(_run_one, idx, n, case): idx
-                    for idx, case in enumerate(cases, 1)
+        print(f"\n--- {dataset.name} | model={model_id} | mode={mode} "
+              f"| workers={cfg.EVAL_CONCURRENCY} | todo={len(pending)}/{n} ---")
+
+        _progress_lock = threading.Lock()
+
+        def _append_progress(result: dict, _path: Path = partial_path) -> None:
+            with _progress_lock:
+                with _path.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(result) + "\n")
+
+        def _run_one(case: EvalCase, _mode: str = mode) -> tuple[str, dict]:
+            """Run one case and return (case_id, result). Thread-safe."""
+            idx = _case_position[case.id]
+            t0 = time.monotonic()
+            with _print_lock:
+                print(f"  [{idx}/{n}] {case.id[:50]}", flush=True)
+            try:
+                result = run_case(
+                    case=case,
+                    dataset=dataset,
+                    retriever=retriever,
+                    model_id=model_id,
+                    mode=_mode,
+                    dry_run=args.dry_run,
+                    judge_model_id=judge_id,
+                    skip_scoring=args.skip_scoring,
+                )
+            except Exception as exc:
+                with _print_lock:
+                    print(f"    [{idx}] ERROR: {exc}", flush=True)
+                result = {
+                    "id": case.id,
+                    "question": case.question,
+                    "rubric": case.rubric,
+                    "response": "",
+                    "mode": _mode,
+                    "model": model_id,
+                    "retrieved_ids": [],
+                    "n_chunks": 0,
+                    "retrieval_metrics": {},
+                    "citation_metrics": {},
+                    "scoring": {
+                        "earned": None,
+                        "total": None,
+                        "feedback": f"Case failed: {exc}",
+                        "_case_error": True,
+                    },
+                    "error": str(exc),
                 }
-                for future in as_completed(futures):
-                    i, result = future.result()
-                    results_map[i] = result
+            elapsed = time.monotonic() - t0
+            with _print_lock:
+                print(f"    [{idx}] done in {elapsed:.1f}s", flush=True)
+            _append_progress(result)
+            return case.id, result
 
-        results = [results_map[i] for i in range(1, n + 1)]
+        new_results: dict[str, dict] = {}
+        if pending:
+            if cfg.EVAL_CONCURRENCY <= 1:
+                for case in pending:
+                    case_id, result = _run_one(case)
+                    new_results[case_id] = result
+            else:
+                with ThreadPoolExecutor(max_workers=cfg.EVAL_CONCURRENCY) as pool:
+                    futures = {pool.submit(_run_one, case): case.id for case in pending}
+                    for future in as_completed(futures):
+                        case_id, result = future.result()
+                        new_results[case_id] = result
 
-        # Summary stats
+        # Merge completed + new, preserving original case order
+        all_results = {**completed_results, **new_results}
+        results = [all_results[c.id] for c in cases if c.id in all_results]
+
         _print_summary(results)
         mode_summaries[mode] = _collect_mode_summary(results)
 
@@ -1169,6 +1218,7 @@ def main() -> None:
             "cases":   results,
         }
         out_path.write_text(json.dumps(payload, indent=2))
+        partial_path.unlink(missing_ok=True)
         print(f"  Saved -> {out_path}")
 
     if len(mode_summaries) > 1:
