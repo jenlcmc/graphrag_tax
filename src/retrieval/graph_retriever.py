@@ -15,6 +15,7 @@ This module is intentionally section-aware so it can recover chains such as:
 """
 
 import re
+from collections import OrderedDict
 from pathlib import Path
 
 from src import config as cfg
@@ -37,7 +38,8 @@ BROAD_QUERY_WORD_LIMIT = 12
 TOP_COMMUNITIES = 3
 
 # Soft cap to avoid flooding results with weak title matches.
-MAX_ENTRY_NODES = 40
+MAX_ENTRY_NODES = max(1, cfg.GRAPH_MAX_ENTRY_NODES)
+MAX_NEIGHBORS_PER_NODE = max(1, cfg.GRAPH_MAX_NEIGHBORS_PER_NODE)
 
 # Basic stop-word list for query tokenization.
 STOPWORDS = {
@@ -117,6 +119,16 @@ KEYWORD_TO_SECTION_HINTS: dict[str, set[str]] = {
 class GraphRetriever:
     def __init__(self, index: GraphIndex):
         self.index = index
+        self._query_cache: OrderedDict[tuple[str, int], list[dict]] = OrderedDict()
+        self._cache_size = max(0, int(cfg.GRAPH_QUERY_CACHE_SIZE))
+
+        self._node_text: dict[str, tuple[str, str, str]] = {}
+        for node_id, attrs in self.index.graph.nodes(data=True):
+            self._node_text[node_id] = (
+                str(node_id).lower(),
+                str(attrs.get("title", "")).lower(),
+                str(attrs.get("source", "")).lower(),
+            )
 
     @classmethod
     def load(cls, graph_path: Path, community_path: Path):
@@ -130,6 +142,12 @@ class GraphRetriever:
         Results include a `graph_score` field. Community summary results are
         scored 0.9; node-level scores decay with hop distance.
         """
+        depth = max(0, int(depth))
+        cache_key = (text, depth)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return [dict(item) for item in cached]
+
         has_section_ref = bool(_SECTION_REF_RE.search(text))
         word_count = len(text.split())
         is_broad = not has_section_ref and word_count <= BROAD_QUERY_WORD_LIMIT
@@ -147,7 +165,9 @@ class GraphRetriever:
             if sid not in results or node_result["graph_score"] > results[sid]["graph_score"]:
                 results[sid] = node_result
 
-        return sorted(results.values(), key=lambda r: r["graph_score"], reverse=True)
+        ranked = sorted(results.values(), key=lambda r: r["graph_score"], reverse=True)
+        self._cache_set(cache_key, ranked)
+        return [dict(item) for item in ranked]
 
     def _query_communities(self, text: str) -> list[dict]:
         """Return community summary results ranked by keyword overlap with query."""
@@ -244,23 +264,29 @@ class GraphRetriever:
             if neighbor in seen:
                 continue
             seen.add(neighbor)
-            edge_type = self.index.graph.edges[node_id, neighbor].get("type", "")
-            score = self._neighbor_priority(neighbor, edge_type, query_terms)
+            edge_attrs = dict(self.index.graph.edges[node_id, neighbor])
+            edge_type = edge_attrs.get("type", "")
+            score = self._neighbor_priority(neighbor, edge_type, query_terms, edge_attrs)
             scored.append((score, neighbor))
 
         for neighbor in self.index.graph.predecessors(node_id):
             if neighbor in seen:
                 continue
             seen.add(neighbor)
-            edge_type = self.index.graph.edges[neighbor, node_id].get("type", "")
-            score = self._neighbor_priority(neighbor, edge_type, query_terms)
+            edge_attrs = dict(self.index.graph.edges[neighbor, node_id])
+            edge_type = edge_attrs.get("type", "")
+            score = self._neighbor_priority(neighbor, edge_type, query_terms, edge_attrs)
             scored.append((score, neighbor))
 
         scored.sort(key=lambda item: item[0], reverse=True)
-        return [node for _, node in scored]
+        return [node for _, node in scored[:MAX_NEIGHBORS_PER_NODE]]
 
     def _neighbor_priority(
-        self, neighbor_id: str, edge_type: str, query_terms: list[str]
+        self,
+        neighbor_id: str,
+        edge_type: str,
+        query_terms: list[str],
+        edge_attrs: dict | None = None,
     ) -> float:
         """Score a neighbor candidate for BFS frontier ordering."""
         edge_weight = {
@@ -269,12 +295,19 @@ class GraphRetriever:
             "hierarchy": cfg.GRAPH_EDGE_WEIGHT_HIERARCHY,
         }.get(edge_type, cfg.GRAPH_EDGE_WEIGHT_DEFAULT)
 
+        if edge_type == "coverage":
+            provenance = str((edge_attrs or {}).get("coverage_provenance", "")).lower()
+            if provenance == "fallback":
+                edge_weight -= cfg.GRAPH_COVERAGE_PENALTY_FALLBACK
+            elif provenance.startswith("inferred"):
+                edge_weight -= cfg.GRAPH_COVERAGE_PENALTY_INFERRED
+
         attrs = self.index.graph.nodes[neighbor_id]
         text = f"{neighbor_id} {attrs.get('title', '')}".lower()
         overlap = sum(1 for term in query_terms if term in text)
         usc_boost = cfg.GRAPH_USC_BOOST if attrs.get("source") == "usc26" else 0.0
 
-        return edge_weight + cfg.GRAPH_OVERLAP_WEIGHT * overlap + usc_boost
+        return max(0.0, edge_weight + cfg.GRAPH_OVERLAP_WEIGHT * overlap + usc_boost)
 
     def _find_entry_nodes(self, text: str) -> list[tuple[str, float]]:
         """Return likely entry nodes with normalized confidence scores."""
@@ -290,9 +323,7 @@ class GraphRetriever:
 
         scored_matches: dict[str, float] = {}
 
-        for node_id in self.index.graph.nodes:
-            node_id_lower = node_id.lower()
-            title = self.index.graph.nodes[node_id].get("title", "").lower()
+        for node_id, (node_id_lower, title, source_lower) in self._node_text.items():
             score = 0.0
             overlap = sum(1 for term in query_terms if term in node_id_lower or term in title)
 
@@ -319,7 +350,7 @@ class GraphRetriever:
                 score += 0.5
 
             if score > 0.0:
-                if self.index.graph.nodes[node_id].get("source") == "usc26":
+                if source_lower == "usc26":
                     score += 0.1
                 scored_matches[node_id] = score
 
@@ -361,6 +392,26 @@ class GraphRetriever:
             normalized.append((node_id, min(1.0, confidence)))
 
         return normalized
+
+    def _cache_get(self, key: tuple[str, int]) -> list[dict] | None:
+        if self._cache_size <= 0:
+            return None
+
+        cached = self._query_cache.get(key)
+        if cached is None:
+            return None
+
+        self._query_cache.move_to_end(key)
+        return list(cached)
+
+    def _cache_set(self, key: tuple[str, int], results: list[dict]) -> None:
+        if self._cache_size <= 0:
+            return
+
+        self._query_cache[key] = list(results)
+        self._query_cache.move_to_end(key)
+        while len(self._query_cache) > self._cache_size:
+            self._query_cache.popitem(last=False)
 
 
 def _query_terms(text: str) -> list[str]:

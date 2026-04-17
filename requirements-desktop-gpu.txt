@@ -1,0 +1,12 @@
+-r requirements.txt
+
+# Desktop GPU profile (CUDA).
+# 1) Install CUDA-enabled torch that matches your driver (example: cu121):
+#    pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.2.2
+# 2) Optional FAISS GPU backend (conda recommended):
+#    conda install -c pytorch -c nvidia faiss-gpu
+#
+# Notes:
+# - faiss-gpu is optional in this project because vector search supports
+#   torch CUDA fallback when FAISS GPU bindings are unavailable.
+# - faiss-gpu-cuvs is not required.

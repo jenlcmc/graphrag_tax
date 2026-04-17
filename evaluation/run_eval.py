@@ -195,12 +195,25 @@ def _sara_label_options(case: EvalCase) -> list[str]:
 def build_system_prompt(chunks: list[dict]) -> str:
     if not chunks:
         return _SYSTEM_NO_CONTEXT
-    excerpts = [f"[{c['section_id']}]\n{c.get('text', '')}" for c in chunks]
+    excerpts = [
+        f"[{c['section_id']}]\n{_clip_excerpt(str(c.get('text', '')), cfg.PROMPT_EXCERPT_MAX_CHARS)}"
+        for c in chunks
+    ]
     context_block = (
         "Relevant statutory and IRS guidance excerpts:\n\n"
         + "\n\n---\n\n".join(excerpts)
     )
     return _SYSTEM_WITH_CONTEXT.format(context_block=context_block)
+
+
+def _clip_excerpt(text: str, max_chars: int) -> str:
+    """Clip long context excerpts to reduce prompt noise and latency."""
+    if max_chars <= 0:
+        return text
+    if len(text) <= max_chars:
+        return text
+    clipped = text[: max(0, max_chars - 3)].rstrip()
+    return f"{clipped}..."
 
 
 def _build_sara_user_prompt(case: EvalCase) -> str:
@@ -546,6 +559,32 @@ _MOCK_RESPONSE = (
 )
 
 
+def _chunk_relevance_score(chunk: dict) -> float:
+    """Return a unified relevance score across retriever modes."""
+    for key in ("score", "vector_score", "graph_score"):
+        value = chunk.get(key)
+        if isinstance(value, (int, float)):
+            return float(value)
+    return 0.0
+
+
+def _dedupe_chunks_by_section(chunks: list[dict]) -> list[dict]:
+    """Keep one highest-scoring chunk per section_id to reduce prompt redundancy."""
+    by_section: dict[str, dict] = {}
+
+    for chunk in chunks:
+        section_id = str(chunk.get("section_id", "")).strip()
+        if not section_id:
+            continue
+
+        current = by_section.get(section_id)
+        if current is None or _chunk_relevance_score(chunk) > _chunk_relevance_score(current):
+            by_section[section_id] = chunk
+
+    ranked = sorted(by_section.values(), key=_chunk_relevance_score, reverse=True)
+    return ranked
+
+
 def run_case(
     case: EvalCase,
     dataset,
@@ -560,7 +599,7 @@ def run_case(
     is_sara = dataset.name == "sara_v3"
 
     retrieval_query = case.question
-    if is_sara:
+    if is_sara and cfg.SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL:
         facts = str(case.metadata.get("context", "")).strip()
         if facts:
             retrieval_query = f"{case.question}\n{facts}"
@@ -569,7 +608,13 @@ def run_case(
     if mode == "none" or retriever is None:
         chunks = []
     else:
-        chunks = retriever.query(retrieval_query, k=cfg.TOP_K_VECTOR, mode=mode)
+        chunks = retriever.query(
+            retrieval_query,
+            k=cfg.TOP_K_VECTOR,
+            depth=cfg.BFS_DEPTH,
+            mode=mode,
+        )
+        chunks = _dedupe_chunks_by_section(chunks)[: cfg.TOP_K_VECTOR]
     retrieved_ids = [c["section_id"] for c in chunks]
 
     # Generate response
@@ -868,15 +913,19 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        choices=["claude", "gemini", "ollama"],
         default="claude",
-        help="LLM for response generation (default: claude).",
+        help=(
+            "LLM for response generation. "
+            "Accepted: claude | gemini | ollama | ollama:<model-name>"
+        ),
     )
     parser.add_argument(
         "--judge",
-        choices=["claude", "gemini", "ollama"],
         default="claude",
-        help="LLM to use as judge for rubric scoring (default: claude).",
+        help=(
+            "LLM for rubric scoring. "
+            "Accepted: claude | gemini | ollama | ollama:<model-name>"
+        ),
     )
     parser.add_argument(
         "--limit",
@@ -915,22 +964,30 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _resolve_model_cli(value: str, default_ollama: str) -> str:
+    """Resolve CLI model value to an internal model id string."""
+    raw = str(value or "").strip()
+    lowered = raw.lower()
+
+    if lowered == "claude":
+        return cfg.CLAUDE_MODEL
+    if lowered == "gemini":
+        return cfg.GEMINI_MODEL
+    if lowered == "ollama":
+        return f"ollama:{default_ollama}"
+    if lowered.startswith("ollama:") and len(raw) > len("ollama:"):
+        return raw
+
+    raise ValueError(
+        "Invalid model value. Use one of: claude, gemini, ollama, ollama:<model-name>."
+    )
+
+
 def main() -> None:
     args = parse_args()
 
-    if args.model == "claude":
-        model_id = cfg.CLAUDE_MODEL
-    elif args.model == "gemini":
-        model_id = cfg.GEMINI_MODEL
-    else:
-        model_id = f"ollama:{cfg.OLLAMA_MODEL}"
-
-    if args.judge == "claude":
-        judge_id = cfg.CLAUDE_MODEL
-    elif args.judge == "gemini":
-        judge_id = cfg.GEMINI_MODEL
-    else:
-        judge_id = f"ollama:{cfg.OLLAMA_MODEL}"
+    model_id = _resolve_model_cli(args.model, cfg.OLLAMA_MODEL)
+    judge_id = _resolve_model_cli(args.judge, cfg.OLLAMA_MODEL)
 
     modes     = ALL_MODES         if args.mode  == "all"     else [args.mode]
 

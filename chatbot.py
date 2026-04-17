@@ -25,7 +25,7 @@ Usage:
   python chatbot.py --model gemini
 
     # Use a local open-source model via Ollama
-    OLLAMA_MODEL=qwen2.5:3b python chatbot.py --model ollama
+        OLLAMA_MODEL=qwen3.5:2b python chatbot.py --model ollama
 
 In-session commands:
   /mode <none|vector|graph|hybrid>   switch retrieval mode mid-session

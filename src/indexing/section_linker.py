@@ -155,7 +155,13 @@ def inject_coverage_edges(graph: nx.DiGraph) -> int:
             )
 
             for irs_node in ranked[:_MAX_NODES_PER_SOURCE]:
-                added += _add_coverage_edge(graph, irc_root, irs_node, bidirectional=True)
+                added += _add_coverage_edge(
+                    graph,
+                    irc_root,
+                    irs_node,
+                    bidirectional=True,
+                    provenance="curated_section",
+                )
 
     return added
 
@@ -181,7 +187,13 @@ def inject_cross_publication_edges(graph: nx.DiGraph) -> int:
             for node_b in reps_b:
                 if node_a == node_b:
                     continue
-                added += _add_coverage_edge(graph, node_a, node_b, bidirectional=False)
+                added += _add_coverage_edge(
+                    graph,
+                    node_a,
+                    node_b,
+                    bidirectional=False,
+                    provenance="curated_cross_pub",
+                )
 
     return added
 
@@ -241,7 +253,13 @@ def inject_inferred_section_coverage_edges(graph: nx.DiGraph) -> int:
             if irc_root is None:
                 continue
             for rep_node in reps:
-                added += _add_coverage_edge(graph, irc_root, rep_node, bidirectional=True)
+                added += _add_coverage_edge(
+                    graph,
+                    irc_root,
+                    rep_node,
+                    bidirectional=True,
+                    provenance="inferred_section",
+                )
 
     return added
 
@@ -290,7 +308,13 @@ def inject_inferred_cross_publication_edges(graph: nx.DiGraph) -> int:
             for node_b in reps_b:
                 if node_a == node_b:
                     continue
-                added += _add_coverage_edge(graph, node_a, node_b, bidirectional=False)
+                added += _add_coverage_edge(
+                    graph,
+                    node_a,
+                    node_b,
+                    bidirectional=False,
+                    provenance="inferred_cross_pub",
+                )
 
     return added
 
@@ -329,7 +353,13 @@ def inject_fallback_connectivity_edges(
             continue
 
         for rep_node in reps[:2]:
-            added += _add_coverage_edge(graph, root, rep_node, bidirectional=True)
+            added += _add_coverage_edge(
+                graph,
+                root,
+                rep_node,
+                bidirectional=True,
+                provenance="fallback",
+            )
 
     return added
 
@@ -420,17 +450,38 @@ def _add_coverage_edge(
     source_node: str,
     target_node: str,
     bidirectional: bool,
+    provenance: str,
 ) -> int:
     """Add one or two coverage edges if they do not already exist."""
     added = 0
 
-    if source_node != target_node and not graph.has_edge(source_node, target_node):
-        graph.add_edge(source_node, target_node, type="coverage")
-        added += 1
+    if source_node != target_node:
+        if not graph.has_edge(source_node, target_node):
+            graph.add_edge(
+                source_node,
+                target_node,
+                type="coverage",
+                coverage_provenance=provenance,
+            )
+            added += 1
+        else:
+            edge = graph.edges[source_node, target_node]
+            if edge.get("type") == "coverage" and "coverage_provenance" not in edge:
+                edge["coverage_provenance"] = provenance
 
-    if bidirectional and source_node != target_node and not graph.has_edge(target_node, source_node):
-        graph.add_edge(target_node, source_node, type="coverage")
-        added += 1
+    if bidirectional and source_node != target_node:
+        if not graph.has_edge(target_node, source_node):
+            graph.add_edge(
+                target_node,
+                source_node,
+                type="coverage",
+                coverage_provenance=provenance,
+            )
+            added += 1
+        else:
+            edge = graph.edges[target_node, source_node]
+            if edge.get("type") == "coverage" and "coverage_provenance" not in edge:
+                edge["coverage_provenance"] = provenance
 
     return added
 

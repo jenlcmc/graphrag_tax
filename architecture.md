@@ -1,9 +1,16 @@
 # Architecture
 
-Hybrid GraphRAG system for federal income tax Q&A.  The system pairs a
-NetworkX knowledge graph with a FAISS vector index so that retrieval can
-follow cross-publication reference chains (graph traversal) and semantic
-similarity (vector search) at the same time.
+Hybrid GraphRAG system for federal income tax Q&A. The runtime combines:
+
+- A graph channel for structured traversal across statute hierarchy, cross-references, and publication coverage edges
+- A vector channel for semantic lookup over chunk text and canonical section IDs
+- A hybrid merge channel that blends both signals before generation
+
+Current vector retrieval is adaptive:
+
+1. FAISS GPU search when FAISS CUDA bindings are available
+2. Torch CUDA matrix search fallback when CUDA exists but FAISS GPU is unavailable
+3. FAISS CPU fallback everywhere else
 
 ---
 
@@ -11,33 +18,34 @@ similarity (vector search) at the same time.
 
 ```mermaid
 flowchart TD
-    subgraph Ph1["Phase 1 — Sources (knowledge/)"]
+    subgraph Ph1["Phase 1 - Sources (knowledge/)"]
         USC[usc26.xml\nTitle 26 IRC\nSubtitle A]
-        IRS[36 IRS XML publications\np17, p596, i1040gi, p501, ...]
+        IRS[IRS XML and PDF publications\np17, p596, i1040gi, p501, ...]
     end
 
-    subgraph Ph2["Phase 2 — Processing (src/ingestion + src/preprocessing)"]
-        P1[usc26_parser.py\nextract Subtitle A sections\nnormalize ref elements]
-        P2[irs_xml_parser.py\nauto-detect tipx / instrx schema\nextract section text]
-        NRM[normalizer.py\nextract cross-refs via spaCy regex\nIRS pub mentions + § citations]
-        CHK[chunker.py\nsplit at sentence boundaries\nif text > MAX_CHUNK_CHARS]
+    subgraph Ph2["Phase 2 - Processing (src/ingestion + src/preprocessing)"]
+        P1[usc26_parser.py\nextract subtitle sections]
+        P2[irs_xml_parser.py / irs_pdf_parser.py\nextract IRS section text]
+        NRM[normalizer.py\nextract USC and IRS references]
+        CHK[chunker.py\nchunk long text at sentence boundaries]
     end
 
-    subgraph Ph3["Phase 3 — Indexing (src/indexing)"]
-        VI[vector_index.py\nFAISS IndexFlatIP\ncontent + section_id embeddings]
-        GI[graph_index.py\nNetworkX DiGraph\nthree edge types]
-        SL[section_linker.py\ninject coverage edges\ncross-publication edges]
+    subgraph Ph3["Phase 3 - Indexing (src/indexing)"]
+        VI[vector_index.py\ndual vectors: content + section_id\nFAISS indices + optional GPU promotion\ntorch CUDA fallback matrices]
+        GI[graph_index.py\nNetworkX DiGraph\nhierarchy/xref/coverage edges]
+        SL[section_linker.py\ncoverage provenance labels\ncurated, inferred, fallback]
     end
 
-    subgraph Ph4["Phase 4 — Retrieval (src/retrieval)"]
-        VR[vector_retriever.py\ncosine similarity]
-        GR[graph_retriever.py\nBFS traversal]
-        HR[hybrid_retriever.py\nmerge + re-rank\nalpha × vector + 1-alpha × graph]
+    subgraph Ph4["Phase 4 - Retrieval (src/retrieval)"]
+        VR[vector_retriever.py\ncosine search + query/result cache]
+        GR[graph_retriever.py\nentry-node scoring + capped BFS\nprovenance-aware edge penalties]
+        HR[hybrid_retriever.py\nmerge by section_id\noptional score normalization]
     end
 
-    subgraph Ph5["Phase 5 — Generation"]
-        LLM[Claude / Gemini\nwith retrieved context\nas system prompt]
-        ANS[Source-grounded answer\nwith IRC citations]
+    subgraph Ph5["Phase 5 - Generation + Eval"]
+        LLM[Claude / Gemini / Ollama]
+        EVAL[evaluation/run_eval.py\nchunk dedupe + excerpt clipping\nmode all comparison]
+        ANS[answer with citations]
     end
 
     USC --> P1
@@ -53,25 +61,26 @@ flowchart TD
     VR --> HR
     GR --> HR
     HR --> LLM
-    LLM --> ANS
+    LLM --> EVAL
+    EVAL --> ANS
 ```
 
 ---
 
-## Knowledge Graph: Three Edge Types
+## Graph Edge Model
 
 ```mermaid
 flowchart LR
     subgraph USC["26 USC (statute)"]
-        S32["26 USC §32"]
-        S32a["26 USC §32(a)"]
-        S32c["26 USC §32(c)"]
+        S32[26 USC section 32]
+        S32a[26 USC section 32(a)]
+        S32c[26 USC section 32(c)]
     end
 
-    subgraph IRS["IRS Publications"]
-        P17["Pub 17\n(overview)"]
-        P596["Pub 596\n(EIC guide)"]
-        EIC["Schedule EIC\nInstructions"]
+    subgraph IRS["IRS publications"]
+        P17[Pub 17]
+        P596[Pub 596]
+        EIC[Schedule EIC Instructions]
     end
 
     S32 -->|hierarchy| S32a
@@ -82,19 +91,22 @@ flowchart LR
     P596 -->|xref| EIC
 ```
 
-**Why three edge types matter:**
+| Edge type | Primary source | Purpose |
+| --- | --- | --- |
+| hierarchy | XML structure | parent -> child statute navigation |
+| xref | extracted references | explicit statute/pub cross-citations |
+| coverage | section linker | publication-to-statute grounding |
 
-A flat vector index might retrieve Pub 17 for a query about the EIC — but it
-has no mechanism to follow the Pub 17 → Pub 596 → §32 chain.  Explicit edge
-types let BFS traversal recover all three nodes in two hops, so the LLM
-receives the statutory text, the plain-language guide, and the form
-instructions together.
+Coverage edges now include provenance labels:
 
-| Edge type   | Source             | Captures                                      |
-| ----------- | ------------------ | --------------------------------------------- |
-| `hierarchy` | XML tree structure | Parent section → child subsection             |
-| `xref`      | `<ref>` tags + NLP | Explicit §NNN citations and pub name mentions |
-| `coverage`  | section_linker.py  | Curated IRS pub ↔ IRC section relationships   |
+- curated_section
+- curated_cross_pub
+- inferred_section
+- inferred_cross_pub
+- fallback
+
+Graph traversal can penalize lower-confidence inferred/fallback coverage edges,
+which improves citation precision without removing fallback connectivity.
 
 ---
 
@@ -102,68 +114,80 @@ instructions together.
 
 ```mermaid
 flowchart LR
-    Q[User question] --> VR[Vector retriever\ntop-k by cosine similarity]
-    Q --> GR[Graph retriever\nBFS from entry nodes]
+    Q[User question] --> VQ[Vector query\ncontent + optional section_id]
+    Q --> GQ[Graph query\nentry nodes + BFS depth]
 
-    subgraph GR_detail["Graph retrieval detail"]
-        direction TB
-        E1[Find entry nodes\n§ refs + keyword hints]
-        E2[Expand BFS depth=2\nacross hierarchy/xref/coverage]
-        E3[Community summaries\nfor broad queries]
-        E1 --> E2
-        E3 --> E2
-    end
+    VQ --> VSC[Vector scores]
+    GQ --> GSC[Graph scores]
 
-    GR --- GR_detail
+    VSC --> NORM[Optional min-max normalization]
+    GSC --> NORM
 
-    VR --> M[hybrid_retriever.py\nmerge by section_id\nscore = 0.6×vector + 0.4×graph]
-    GR --> M
-    M --> K[Top-k ranked chunks]
-    K --> SYS[System prompt\nwith retrieved excerpts]
-    SYS --> LLM[LLM]
-    LLM --> A[Answer with citations]
+    NORM --> MERGE[Hybrid merge\nscore = alpha*vector + (1-alpha)*graph]
+    MERGE --> DD[Dedupe by section_id]
+    DD --> CLIP[Clip long excerpts for prompt budget]
+    CLIP --> LLM[LLM generation]
 ```
+
+Graph runtime controls include capped entry-node count and capped per-node
+neighbor expansion to keep latency stable during evaluation loops.
 
 ---
 
-## Evaluation Design
+## Vector Backend Selection
 
-Four retrieval conditions are run for each LLM.  Comparing `none` vs
-`hybrid` isolates the contribution of GraphRAG.
+Vector search backend is selected by runtime capability and config:
 
-```
-                 mode=none   mode=vector   mode=graph   mode=hybrid
-claude-sonnet       ✓            ✓             ✓             ✓
-gemini-2.5-pro      ✓            ✓             ✓             ✓
-```
+- VECTOR_SEARCH_BACKEND=auto: prefer FAISS GPU, then torch CUDA, then FAISS CPU
+- VECTOR_SEARCH_BACKEND=faiss: force FAISS search path
+- VECTOR_SEARCH_BACKEND=torch: force torch CUDA search (falls back when CUDA is missing)
 
-**Metric:** rubric-based LLM-as-judge score (points earned / points possible).
-The judge receives the scoring rubric and the model response, and assigns
-partial credit for each criterion.
+This means FAISS GPU is optional for correctness. If torch CUDA is installed but
+FAISS GPU bindings are absent, the system still runs vector search on GPU.
+
+---
+
+## Evaluation Notes
+
+Evaluation supports four retrieval modes per model:
+
+- none
+- vector
+- graph
+- hybrid
+
+Key runtime details in evaluation/run_eval.py:
+
+- depth is wired through retrieval calls from config
+- retrieved chunks are deduped by section_id before prompting
+- excerpts are clipped to a configurable maximum size
+- SARA retrieval query can exclude case body text by default to reduce noise
+- model and judge CLI support direct ollama model ids via ollama:model_name
 
 ---
 
 ## File Interaction Map
 
-```
+```text
 scripts/build_pipeline.py
-  calls  src/ingestion/usc26_parser.py
-  calls  src/ingestion/irs_xml_parser.py
-  calls  src/preprocessing/normalizer.py
-  calls  src/preprocessing/chunker.py
-  calls  src/indexing/vector_index.py   → data/processed/vector_*.faiss + vector_meta.json
-  calls  src/indexing/graph_index.py    → data/processed/graph.graphml + communities.json
-    calls  src/indexing/section_linker.py  (called by graph_index.py internally)
-  calls  src/indexing/graph_audit.py    → data/processed/graph_audit.json
+  -> src/ingestion/usc26_parser.py
+  -> src/ingestion/irs_xml_parser.py
+  -> src/ingestion/irs_pdf_parser.py
+  -> src/preprocessing/normalizer.py
+  -> src/preprocessing/chunker.py
+  -> src/indexing/vector_index.py      (vector_*.faiss + vector_meta.json)
+  -> src/indexing/graph_index.py       (graph.graphml + communities.json)
+      -> src/indexing/section_linker.py
+  -> src/indexing/graph_audit.py       (graph_audit.json)
 
 chatbot.py
-  calls  src/retrieval/hybrid_retriever.py
-    calls  src/retrieval/vector_retriever.py   (loads FAISS indexes)
-    calls  src/retrieval/graph_retriever.py    (loads graph.graphml)
-  calls  Claude API / Gemini API
+  -> src/retrieval/hybrid_retriever.py
+      -> src/retrieval/vector_retriever.py
+      -> src/retrieval/graph_retriever.py
+  -> selected LLM provider
 
 evaluation/run_eval.py
-  calls  src/retrieval/hybrid_retriever.py
-  calls  Claude API / Gemini API  (generation + judge)
-  calls  evaluation/datasets/<name>.py
+  -> src/retrieval/hybrid_retriever.py
+  -> evaluation/datasets/<name>.py
+  -> selected generation and judge providers
 ```

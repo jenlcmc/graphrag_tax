@@ -23,6 +23,16 @@ def _env_int(name: str, default: int) -> int:
 		return default
 
 
+def _env_float(name: str, default: float) -> float:
+	raw = os.getenv(name)
+	if raw is None:
+		return default
+	try:
+		return float(raw)
+	except ValueError:
+		return default
+
+
 def _slugify(value: str) -> str:
 	value = value.strip().lower()
 	value = value.replace(" ", "-")
@@ -136,24 +146,51 @@ EMBEDDING_BATCH_SIZE = _env_int("EMBEDDING_BATCH_SIZE", 32 if LOW_RESOURCE_MODE 
 EMBEDDING_ENCODE_CHUNK_SIZE = _env_int("EMBEDDING_ENCODE_CHUNK_SIZE", 128 if LOW_RESOURCE_MODE else 256)
 EMBEDDING_SHOW_PROGRESS = _env_bool("EMBEDDING_SHOW_PROGRESS", True)
 DUAL_VECTOR_EMBEDDING = _env_bool("DUAL_VECTOR_EMBEDDING", not LOW_RESOURCE_MODE)
+# Retrieval-side FAISS GPU acceleration (CUDA only). Falls back to CPU when unavailable.
+FAISS_USE_GPU = _env_bool("FAISS_USE_GPU", True)
+FAISS_GPU_DEVICE = max(0, _env_int("FAISS_GPU_DEVICE", 0))
+FAISS_GPU_USE_FLOAT16 = _env_bool("FAISS_GPU_USE_FLOAT16", False)
+# Repeated query texts are common in eval runs (vector + hybrid); cache encoded query vectors.
+VECTOR_QUERY_EMBED_CACHE_SIZE = max(0, _env_int("VECTOR_QUERY_EMBED_CACHE_SIZE", 1024))
+# Cache full vector query results for repeated eval queries (vector + hybrid).
+VECTOR_QUERY_RESULT_CACHE_SIZE = max(0, _env_int("VECTOR_QUERY_RESULT_CACHE_SIZE", 1024))
+# Search backend selection: auto | faiss | torch
+# auto: prefer FAISS GPU when available; otherwise use torch matmul on CUDA; fallback to FAISS CPU.
+VECTOR_SEARCH_BACKEND = os.getenv("VECTOR_SEARCH_BACKEND", "auto").strip().lower()
+VECTOR_TORCH_FP16 = _env_bool("VECTOR_TORCH_FP16", True)
+# Skip section-id index search when dual-vector section embeddings are disabled.
+VECTOR_SEARCH_SECTIONID = _env_bool("VECTOR_SEARCH_SECTIONID", DUAL_VECTOR_EMBEDDING)
 TOP_K_VECTOR    = 10
 BFS_DEPTH       = 2
+# Keep SARA retrieval query focused by default to reduce graph/vector noise.
+SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
+	"SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL", False
+)
+# Trim long retrieval excerpts before adding to prompts.
+PROMPT_EXCERPT_MAX_CHARS = _env_int("PROMPT_EXCERPT_MAX_CHARS", 1000)
 
 # --------------------------------------------------------------------------
 # Graph retrieval scoring constants
 # Edge-type priorities used when ordering BFS frontier neighbors.
 # --------------------------------------------------------------------------
 GRAPH_EDGE_WEIGHT_XREF:      float = 3.0
-GRAPH_EDGE_WEIGHT_COVERAGE:  float = 2.5
-GRAPH_EDGE_WEIGHT_HIERARCHY: float = 1.8
+GRAPH_EDGE_WEIGHT_COVERAGE:  float = 1.8
+GRAPH_EDGE_WEIGHT_HIERARCHY: float = 2.2
 GRAPH_EDGE_WEIGHT_DEFAULT:   float = 1.0
 # Per-term overlap contribution added to each neighbor's priority score.
-GRAPH_OVERLAP_WEIGHT: float = 0.20
+GRAPH_OVERLAP_WEIGHT: float = 0.30
 # Small authority boost for USC26 nodes (primary statute).
 GRAPH_USC_BOOST: float = 0.15
 # Entry-node raw-score filter thresholds (before [0.60,1.00] normalization).
-GRAPH_ENTRY_THRESHOLD_BASE:    float = 3.0
-GRAPH_ENTRY_THRESHOLD_SECTION: float = 5.0  # raised when query has explicit § refs
+GRAPH_ENTRY_THRESHOLD_BASE:    float = 3.5
+GRAPH_ENTRY_THRESHOLD_SECTION: float = 5.5  # raised when query has explicit § refs
+# Caps and cache for graph query speed in evaluation loops.
+GRAPH_MAX_ENTRY_NODES = max(1, _env_int("GRAPH_MAX_ENTRY_NODES", 24))
+GRAPH_MAX_NEIGHBORS_PER_NODE = max(1, _env_int("GRAPH_MAX_NEIGHBORS_PER_NODE", 20))
+GRAPH_QUERY_CACHE_SIZE = max(0, _env_int("GRAPH_QUERY_CACHE_SIZE", 1024))
+# Penalize lower-confidence inferred/fallback coverage edges during traversal.
+GRAPH_COVERAGE_PENALTY_INFERRED = _env_float("GRAPH_COVERAGE_PENALTY_INFERRED", 0.25)
+GRAPH_COVERAGE_PENALTY_FALLBACK = _env_float("GRAPH_COVERAGE_PENALTY_FALLBACK", 0.45)
 
 # --------------------------------------------------------------------------
 # Hybrid retrieval blending
@@ -162,7 +199,11 @@ GRAPH_ENTRY_THRESHOLD_SECTION: float = 5.0  # raised when query has explicit § 
 # Default: slightly vector-weighted for broad/semantic queries.
 HYBRID_ALPHA_DEFAULT: float = 0.6
 # When the query cites an explicit IRC § reference, lean on the graph more.
-HYBRID_ALPHA_SECTION_REF: float = 0.35
+HYBRID_ALPHA_SECTION_REF: float = 0.5
+# Cache merged retrieval results by (mode, query, k, depth).
+HYBRID_QUERY_CACHE_SIZE = max(0, _env_int("HYBRID_QUERY_CACHE_SIZE", 1024))
+# Normalize vector/graph scores before blending to reduce channel scale mismatch.
+HYBRID_SCORE_NORMALIZE = _env_bool("HYBRID_SCORE_NORMALIZE", True)
 
 # --------------------------------------------------------------------------
 # Graph linking and audit
@@ -170,8 +211,8 @@ HYBRID_ALPHA_SECTION_REF: float = 0.35
 LINKER_MAX_NODES_PER_SOURCE       = 3
 LINKER_MAX_XPUB_REP_NODES         = 2
 LINKER_MAX_TARGET_SECTIONS        = 8
-LINKER_MIN_SECTION_REF_SUPPORT    = 2
-LINKER_MIN_CROSS_PUB_SUPPORT      = 2
+LINKER_MIN_SECTION_REF_SUPPORT    = 3
+LINKER_MIN_CROSS_PUB_SUPPORT      = 3
 LINKER_ENABLE_FALLBACK_CONNECTIVITY = _env_bool("LINKER_ENABLE_FALLBACK_CONNECTIVITY", True)
 LINKER_FALLBACK_MIN_XREF_COVERAGE = _env_int("LINKER_FALLBACK_MIN_XREF_COVERAGE", 1)
 

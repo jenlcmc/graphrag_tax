@@ -1,6 +1,7 @@
-# Core pipeline — no API key needed
-# Pinned for compatibility with Intel Mac (x86_64) and Apple Silicon
-# torch 2.2.2 is the latest available on Intel Mac; numpy must be <2 for torch 2.x
+# Core pipeline (cross-platform baseline, CPU-safe).
+# Works on Windows, Linux, and macOS (including Intel Mac 2019).
+# torch 2.2.2 remains pinned for Intel Mac compatibility; numpy must stay <2.
+# GPU acceleration is optional and configured via requirements-desktop-gpu.txt.
 
 lxml>=6.0
 spacy>=3.8
@@ -8,11 +9,13 @@ numpy==1.26.4
 torch==2.2.2
 transformers==4.44.2
 sentence-transformers==3.3.1
+# Keep CPU FAISS in base for universal compatibility; GPU FAISS is optional.
 faiss-cpu>=1.7
 networkx>=3.6
 python-dotenv>=1.2
 pypdf>=4.2
 huggingface-hub>=0.23.2,<1.0
+tqdm>=4.66
 
 # LLM API clients — needed for chatbot.py and evaluation/run_eval.py
 anthropic>=0.34

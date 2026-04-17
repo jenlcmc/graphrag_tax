@@ -1,11 +1,12 @@
-ENV_NAME ?= cs789_research
+ENV_NAME ?= cs789
 CONDA ?= ~/anaconda3/bin/conda
+REQ_PROFILE ?= requirements-laptop-cpu.txt
 PY := $(CONDA) run -n $(ENV_NAME) python3
 
 .PHONY: install spacy build-2017 build-2024 smoke test eval-taxbench-dry eval-sara-dry viz
 
 install:
-	$(PY) -m pip install -r requirements.txt
+	$(PY) -m pip install -r $(REQ_PROFILE)
 
 spacy:
 	$(PY) -m spacy download en_core_web_sm

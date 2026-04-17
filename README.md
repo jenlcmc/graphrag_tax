@@ -54,13 +54,13 @@ Commands below include Bash and PowerShell variants where syntax differs.
 ### 1. Create and activate the conda environment
 
 ```bash
-conda create -n cs789_research python=3.11
-conda activate cs789_research
+conda create -n cs789 python=3.11
+conda activate cs789
 ```
 
 ```powershell
-conda create -n cs789_research python=3.11
-conda activate cs789_research
+conda create -n cs789 python=3.11
+conda activate cs789
 ```
 
 ### 2. Install Python dependencies
@@ -69,12 +69,34 @@ Run from inside `graphrag_tax/`:
 
 ```bash
 cd graphrag_tax
-pip install -r requirements.txt
+pip install -r requirements-laptop-cpu.txt
 ```
 
 ```powershell
 Set-Location graphrag_tax
-pip install -r requirements.txt
+pip install -r requirements-laptop-cpu.txt
+```
+
+For desktop GPUs (CUDA), install the desktop profile instead:
+
+```bash
+cd graphrag_tax
+pip install -r requirements-desktop-gpu.txt
+```
+
+```powershell
+Set-Location graphrag_tax
+pip install -r requirements-desktop-gpu.txt
+```
+
+Optional for maximum vector-search speed on supported Linux/Windows conda setups:
+
+```bash
+conda install -c pytorch -c nvidia faiss-gpu
+```
+
+```powershell
+conda install -c pytorch -c nvidia faiss-gpu
 ```
 
 ### 3. Download the spaCy model
@@ -100,7 +122,7 @@ GEMINI_API_KEY=AI...
 
 ```bash
 # One-time model download
-ollama pull qwen2.5:3b
+ollama pull qwen3.5:2b
 
 # Start server if not already running
 ollama serve
@@ -108,7 +130,7 @@ ollama serve
 
 ```powershell
 # One-time model download
-ollama pull qwen2.5:3b
+ollama pull qwen3.5:2b
 
 # Start server if not already running
 ollama serve
@@ -197,6 +219,28 @@ Useful knobs:
 - `EMBEDDING_ENCODE_CHUNK_SIZE`: larger outer chunks reduce overhead (for example `512`)
 - `DUAL_VECTOR_EMBEDDING=0`: skips separate section-id embedding pass for faster builds
 
+### Retrieval performance tuning (query stage)
+
+Vector retrieval now uses an adaptive backend:
+
+1. FAISS GPU (if available)
+2. Torch CUDA matmul/top-k fallback (when CUDA exists but FAISS GPU bindings are missing)
+3. FAISS CPU fallback
+
+Useful knobs:
+
+- `VECTOR_SEARCH_BACKEND=auto|faiss|torch` (default: `auto`)
+- `FAISS_USE_GPU=1` (default) to allow FAISS GPU promotion when supported
+- `VECTOR_TORCH_FP16=1` to use fp16 torch matrix search on CUDA
+- `VECTOR_QUERY_EMBED_CACHE_SIZE` and `VECTOR_QUERY_RESULT_CACHE_SIZE` for repeated-query speedup
+- `GRAPH_QUERY_CACHE_SIZE`, `HYBRID_QUERY_CACHE_SIZE` for graph/hybrid eval loops
+
+Graph/hybrid quality-speed knobs:
+
+- `GRAPH_MAX_ENTRY_NODES` and `GRAPH_MAX_NEIGHBORS_PER_NODE` cap traversal fanout
+- `HYBRID_SCORE_NORMALIZE=1` reduces score-scale mismatch before blending
+- `SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL=0` keeps SARA retrieval focused by default
+
 GPU checklist:
 
 ```bash
@@ -237,6 +281,10 @@ python scripts/build_pipeline.py
 > **Intel Mac note:** low-resource mode auto-enables on Intel Macs and defaults to
 > a smaller embedding model and safer batch settings. To force low-resource mode
 > manually, run with `LOW_RESOURCE_MODE=1`.
+
+> **FAISS GPU note:** `faiss-gpu` is optional. If unavailable, vector search still uses
+> CUDA through torch fallback when CUDA torch is installed. `faiss-gpu-cuvs` is not
+> required for this project.
 
 ---
 
@@ -334,6 +382,9 @@ python scripts/viz_graph.py --sample-n 300
 Batch evaluation compares the four retrieval modes (none / vector / graph /
 hybrid) to measure GraphRAG's contribution.  Results are saved to
 `evaluation/results/`.
+
+`--model` and `--judge` accept `claude`, `gemini`, `ollama`, or
+`ollama:<model-name>` for direct local-model selection.
 
 ### Available datasets
 
@@ -539,6 +590,7 @@ The project includes a `Makefile` for common tasks:
 
 ```bash
 make install          # install dependencies
+make install REQ_PROFILE=requirements-desktop-gpu.txt  # desktop GPU profile
 make spacy            # download spaCy model
 make build-2017       # build pipeline with knowledge/2017
 make build-2024       # build pipeline with knowledge/2024-2026
@@ -550,7 +602,9 @@ make eval-taxbench-dry
 
 ```powershell
 # PowerShell (Windows) equivalents
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-laptop-cpu.txt
+# or desktop GPU profile:
+python -m pip install -r requirements-desktop-gpu.txt
 python -m spacy download en_core_web_sm
 
 $env:KNOWLEDGE_PROFILE="2017"
@@ -611,6 +665,8 @@ research_789/                     repository root
 │   ├── data/processed/           pipeline artifacts (gitignored)
 │   ├── chatbot.py                interactive CLI
 │   ├── requirements.txt
+│   ├── requirements-laptop-cpu.txt
+│   ├── requirements-desktop-gpu.txt
 │   ├── README.md                 this file
 │   └── architecture.md           pipeline diagrams
 ├── knowledge/                    IRS XML + USC XML (shared source data)
@@ -633,14 +689,22 @@ All settings live in [src/config.py](src/config.py).
 | `BFS_DEPTH`                    | 2                   | Graph traversal hops                        |
 | `EXCLUDED_SOURCES`             | `{i1040nr, p519}`   | Non-resident sources, excluded              |
 | `LOW_RESOURCE_MODE`            | auto (Intel Mac)    | Smaller model + smaller batches             |
-| `OLLAMA_MODEL`                 | `qwen2.5:3b`        | Local model used when `--model ollama`      |
+| `OLLAMA_MODEL`                 | `qwen3.5:2b`        | Local model used when `--model ollama`      |
+| `FAISS_USE_GPU`                | `True`              | Promote FAISS indexes to CUDA when possible |
+| `VECTOR_SEARCH_BACKEND`        | `auto`              | `auto`, `faiss`, or `torch`                 |
+| `VECTOR_TORCH_FP16`            | `True`              | fp16 torch CUDA search for speed            |
+| `VECTOR_SEARCH_SECTIONID`      | auto                | Section-id index search toggle              |
 | `HYBRID_ALPHA_DEFAULT`         | 0.6                 | Vector weight for broad/semantic queries    |
-| `HYBRID_ALPHA_SECTION_REF`     | 0.35                | Vector weight when query cites explicit §   |
+| `HYBRID_ALPHA_SECTION_REF`     | 0.5                 | Vector weight when query cites explicit §   |
+| `HYBRID_SCORE_NORMALIZE`       | `True`              | Normalize channel scores before blending    |
 | `GRAPH_EDGE_WEIGHT_XREF`       | 3.0                 | BFS neighbor priority for xref edges        |
-| `GRAPH_EDGE_WEIGHT_COVERAGE`   | 2.5                 | BFS neighbor priority for coverage edges    |
-| `GRAPH_EDGE_WEIGHT_HIERARCHY`  | 1.8                 | BFS neighbor priority for hierarchy edges   |
-| `GRAPH_OVERLAP_WEIGHT`         | 0.20                | Per-term overlap contribution to BFS score  |
+| `GRAPH_EDGE_WEIGHT_COVERAGE`   | 1.8                 | BFS neighbor priority for coverage edges    |
+| `GRAPH_EDGE_WEIGHT_HIERARCHY`  | 2.2                 | BFS neighbor priority for hierarchy edges   |
+| `GRAPH_OVERLAP_WEIGHT`         | 0.30                | Per-term overlap contribution to BFS score  |
 | `GRAPH_USC_BOOST`              | 0.15                | Authority boost for USC26 nodes             |
+| `GRAPH_MAX_ENTRY_NODES`        | 24                  | Entry-node cap per graph query              |
+| `GRAPH_MAX_NEIGHBORS_PER_NODE` | 20                  | Frontier expansion cap per node             |
+| `PROMPT_EXCERPT_MAX_CHARS`     | 1000                | Retrieval snippet trim before prompting      |
 
 To add a new IRS XML source: place its XML at `knowledge/<name>/<name>.xml`
 and add a display label to `src/ingestion/irs_xml_parser.SOURCE_LABELS`.

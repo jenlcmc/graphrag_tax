@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# Laptop / CPU profile (recommended for Intel Mac and low-memory machines).
+# Runtime knobs for better stability/perf on older hardware:
+#   LOW_RESOURCE_MODE=1
+#   DUAL_VECTOR_EMBEDDING=0
+#   VECTOR_SEARCH_BACKEND=faiss
