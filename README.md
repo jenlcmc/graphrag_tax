@@ -394,7 +394,7 @@ hybrid) to measure GraphRAG's contribution.  Results are saved to
 | ---------------- | ----------- | ----- | ------- |
 | `taxbench` | `dataset/TaxBench-EvalSet.jsonl` | varies | LLM-as-judge (rubric criteria) + ROUGE-1/2/L + recall@k + MRR |
 | `irs_form_qa` | `dataset/test-tax_form_instructions_qa_pairs.parquet` | 200 | LLM-as-judge (reference answer, 0–1 scale) + ROUGE-1/2/L |
-| `sara_v3` | `dataset/sara_v3/` | split-dependent | Deterministic scoring from case structure (`%Question` + `%Test`): label/numeric/string answer correctness + fact-grounded citation correctness + numeric step quality + ROUGE-1/2/L + recall@k + MRR |
+| `sara_v3` | `dataset/sara_v3/` | split-dependent | Deterministic scoring from case structure (`%Question` + `%Test`): label/numeric/string answer correctness + fact-grounded citation correctness + numeric step quality + predicted final-answer extraction + citation-penalty breakdown + ROUGE-1/2/L + recall@k + MRR |
 
 For label-style SARA cases, the preferred final format is:
 
@@ -404,6 +404,19 @@ Final Answer: Entailment
 
 `Final Answer: True` is normalized to `Entailment`, and `Final Answer: False`
 is normalized to `Contradiction` during deterministic scoring.
+
+SARA case-level scoring now stores extracted model answers for easier debugging:
+
+- `predicted_final_answer`: normalized final answer text for every case
+- `predicted_label`: normalized label for label cases (`entailment`, `contradiction`, `unknown`)
+- `predicted_numeric_answer`: extracted numeric answer for numeric cases, with fallback extraction when output is truncated
+
+SARA also stores a citation-penalty fairness breakdown for comparisons against
+LLM-only runs:
+
+- `score_before_citation_penalty`
+- `citation_penalty`
+- `score_after_citation_penalty` (same scale as `earned`)
 
 The SARA adapter is implemented against the full dataset patterns (not single
 examples):
@@ -538,6 +551,9 @@ python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --j
 
 SARA runs include a per-mode comparison summary with hybrid-vs-none deltas,
 so you can directly show the impact of adding GraphRAG context.
+Mode summaries also print `score_before_citation_penalty`,
+`score_after_citation_penalty`, and `citation_penalty` so you can compare
+answer quality before and after citation penalties are applied.
 
 #### SARA prompt structure
 
@@ -795,6 +811,9 @@ You can also set per-request generation options via `OLLAMA_NUM_CTX`,
 ## Metrics
 
 - **score%**: LLM judge score as a percentage (0–100 scale)
+- **score_before_citation_penalty**: SARA deterministic score before citation penalty (0–1)
+- **score_after_citation_penalty**: SARA deterministic score after citation penalty (0–1)
+- **citation_penalty**: citation-grounding deduction applied to SARA deterministic score (0–1)
 - **ans_ok**: final answer correctness (0–1)
 - **cite_prec**: precision of cited sources (0–1)
 - **cite_rec**: recall of cited sources (0–1)

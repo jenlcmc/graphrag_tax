@@ -125,6 +125,46 @@ def _extract_predicted_numeric_answer(response: str) -> str | None:
     return None
 
 
+_CITATION_WEIGHT_BY_EXPECTED_TYPE = {
+    "label": 0.25,
+    "numeric": 0.20,
+    "string": 0.25,
+}
+
+
+def _add_citation_penalty_breakdown(judge_result: dict, expected_type: str) -> None:
+    """Annotate scoring with pre-/post-citation-penalty values.
+
+    score_before_citation_penalty keeps the same 0..1 scale as earned by adding
+    back only the citation-grounding penalty component used in deterministic
+    SARA scoring paths.
+    """
+    earned_raw = judge_result.get("earned")
+    if earned_raw is None:
+        judge_result["score_before_citation_penalty"] = None
+        judge_result["citation_penalty"] = None
+        judge_result["score_after_citation_penalty"] = None
+        return
+
+    earned = float(earned_raw)
+    citation_precision = judge_result.get("citation_fact_precision")
+    citation_weight = _CITATION_WEIGHT_BY_EXPECTED_TYPE.get(str(expected_type).lower())
+
+    if citation_weight is None or citation_precision is None:
+        judge_result["score_before_citation_penalty"] = round(earned, 4)
+        judge_result["citation_penalty"] = 0.0
+        judge_result["score_after_citation_penalty"] = round(earned, 4)
+        return
+
+    precision = max(0.0, min(1.0, float(citation_precision)))
+    penalty = citation_weight * (1.0 - precision)
+    score_before = min(1.0, earned + penalty)
+
+    judge_result["score_before_citation_penalty"] = round(score_before, 4)
+    judge_result["citation_penalty"] = round(penalty, 4)
+    judge_result["score_after_citation_penalty"] = round(earned, 4)
+
+
 def _normalize_string(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", text.lower())).strip()
 
@@ -775,6 +815,7 @@ class SARAV3Dataset(Dataset):
         judge_result["calculation_steps_present"] = calc_steps_present
         judge_result.update(citation)
         judge_result["citation_correct"] = citation["n_correct_cited_refs"] > 0
+        _add_citation_penalty_breakdown(judge_result, expected_type)
 
         rouge_result = _compute_rouge(response or "", expected) if expected else {}
         return {**judge_result, **rouge_result}

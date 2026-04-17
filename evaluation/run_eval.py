@@ -928,6 +928,9 @@ def _print_summary(results: list[dict]) -> None:
             )
 
     for key, label in (
+        ("score_before_citation_penalty", "score_before_citation_penalty"),
+        ("score_after_citation_penalty", "score_after_citation_penalty"),
+        ("citation_penalty", "citation_penalty"),
         ("answer_correct", "answer_correct"),
         ("calculation_steps_present", "calc_steps"),
         ("citation_fact_precision", "citation_fact_precision"),
@@ -967,6 +970,9 @@ def _collect_mode_summary(results: list[dict]) -> dict:
             summary["score_pct"] = (earned / total) * 100.0
 
     for key in (
+        "score_before_citation_penalty",
+        "score_after_citation_penalty",
+        "citation_penalty",
         "answer_correct",
         "calculation_steps_present",
         "citation_fact_precision",
@@ -1011,6 +1017,9 @@ def _print_mode_comparison(mode_summaries: dict[str, dict]) -> None:
     print("\n=== Mode Comparison ===")
     metrics_order = [
         "score_pct",
+        "score_before_citation_penalty",
+        "score_after_citation_penalty",
+        "citation_penalty",
         "answer_correct",
         "unknown_label_rate",
         "calculation_steps_present",

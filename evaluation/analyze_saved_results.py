@@ -55,6 +55,15 @@ def _summarize_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "n_cases": len(cases),
         "score_pct": (earned_sum / total_sum * 100.0) if total_sum > 0 else None,
+        "score_before_citation_penalty": _avg([
+            _safe_num(item.get("score_before_citation_penalty")) for item in scoring
+        ]),
+        "score_after_citation_penalty": _avg([
+            _safe_num(item.get("score_after_citation_penalty")) for item in scoring
+        ]),
+        "citation_penalty": _avg([
+            _safe_num(item.get("citation_penalty")) for item in scoring
+        ]),
         "answer_correct": _avg([_safe_num(item.get("answer_correct")) for item in scoring]),
         "citation_fact_precision": _avg([
             _safe_num(item.get("citation_fact_precision")) for item in scoring
@@ -103,7 +112,7 @@ def _print_group_report(
     summaries = {mode: _summarize_payload(mode_payloads[mode]) for mode in present_modes}
 
     print(
-        "mode    cases  score%   ans_ok  cite_prec cite_rec  "
+        "mode    cases  score%   pre_pen post_pen cit_pen ans_ok  cite_prec cite_rec  "
         "unk_rate  r@k_hier mrr_hier r@k_exact mrr_exact"
     )
     for mode in present_modes:
@@ -111,6 +120,9 @@ def _print_group_report(
         print(
             f"{mode:<7} {summary['n_cases']:<5} "
             f"{_fmt(summary['score_pct']):>7} "
+            f"{_fmt(summary['score_before_citation_penalty']):>8} "
+            f"{_fmt(summary['score_after_citation_penalty']):>8} "
+            f"{_fmt(summary['citation_penalty']):>7} "
             f"{_fmt(summary['answer_correct']):>7} "
             f"{_fmt(summary['citation_fact_precision']):>9} "
             f"{_fmt(summary['citation_fact_recall']):>8} "
@@ -125,6 +137,9 @@ def _print_group_report(
         print("\nHybrid - None Delta")
         keys = [
             "score_pct",
+            "score_before_citation_penalty",
+            "score_after_citation_penalty",
+            "citation_penalty",
             "answer_correct",
             "citation_fact_precision",
             "citation_fact_recall",

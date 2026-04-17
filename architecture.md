@@ -165,6 +165,15 @@ Key runtime details in evaluation/run_eval.py:
 - all Ollama requests include `num_gpu=OLLAMA_NUM_GPU` (default 99) to force GPU offload
 - set `OLLAMA_NUM_CTX=16384` on desktop GPU / `8192` on laptop CPU to avoid response truncation
 
+SARA deterministic scoring outputs now include explicit answer extraction and
+penalty-breakdown fields for fairer analysis:
+
+- predicted answers: `predicted_final_answer`, plus `predicted_label` or `predicted_numeric_answer` by case type
+- fairness breakdown: `score_before_citation_penalty`, `citation_penalty`, `score_after_citation_penalty`
+
+This separates answer-quality comparison from citation-grounding penalties when
+benchmarking GraphRAG modes against LLM-only runs.
+
 ### SARA-specific prompt flow
 
 ```text
