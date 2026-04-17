@@ -161,7 +161,7 @@ VECTOR_TORCH_FP16 = _env_bool("VECTOR_TORCH_FP16", True)
 # Skip section-id index search when dual-vector section embeddings are disabled.
 VECTOR_SEARCH_SECTIONID = _env_bool("VECTOR_SEARCH_SECTIONID", DUAL_VECTOR_EMBEDDING)
 TOP_K_VECTOR    = 7
-BFS_DEPTH       = 2
+BFS_DEPTH       = 2 # change to 2 for more sections as 1 == relevany statue section only
 # Keep SARA retrieval query focused by default to reduce graph/vector noise.
 SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
 	"SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL", False
@@ -169,14 +169,20 @@ SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
 # For SARA, retrieval chunks are supplemental to the per-case authoritative
 # statute block in the prompt. Keep this cap independent so we can tune SARA
 # without affecting general TaxBench retrieval.
-SARA_SUPPLEMENT_TOP_K = max(1, _env_int("SARA_SUPPLEMENT_TOP_K", TOP_K_VECTOR))
-# Community summaries can be useful for broad questions 
+SARA_SUPPLEMENT_TOP_K = max(1, _env_int("SARA_SUPPLEMENT_TOP_K", 5))
+# Community summaries can be useful for broad questions
 SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY = _env_bool(
-	"SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY", True
+	"SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY", False
 )
 # Prefer chunks that match case-allowed USC refs before using broader context.
 SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS = _env_bool(
 	"SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS", True
+)
+# When True, SARA supplement only includes chunks whose section_id matches an
+# allowed_ref exactly. Eliminates unrelated USC26 / IRS-pub noise that competes
+# with the authoritative SARA statute text already in the user prompt.
+SARA_SUPPLEMENT_ALLOWED_REFS_ONLY = _env_bool(
+	"SARA_SUPPLEMENT_ALLOWED_REFS_ONLY", True
 )
 # Trim long retrieval excerpts before adding to prompts.
 PROMPT_EXCERPT_MAX_CHARS = _env_int("PROMPT_EXCERPT_MAX_CHARS", 1000)

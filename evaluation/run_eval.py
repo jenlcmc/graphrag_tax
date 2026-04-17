@@ -180,9 +180,9 @@ Final Answer: <value-or-label>
 Constraints:
 - The Final Answer line is mandatory — write it even if the steps above are incomplete.
 - Use ONLY the provided case facts for taxpayer-specific values.
-- Treat "SARA Authoritative Statute Text" as the primary legal source.
-- Use retrieved excerpts as supplemental context; if they conflict with SARA statute text, follow SARA statute text.
-- When an allowed citation list is provided, cite from that list. Otherwise cite the relevant SARA statute sections you used.
+- Treat "SARA Authoritative Statute Text" as the primary legal source for ALL thresholds, rates, and rules.
+- Retrieved excerpts provide additional detail only; if they conflict with SARA statute text, follow SARA statute text.
+- When an allowed citation list is provided, cite from that list.
 """
 
 
@@ -681,10 +681,44 @@ def _sara_ref_matches_section(section_id: str, allowed_refs: list[str]) -> bool:
     return False
 
 
-def _prioritize_sara_supplement_chunks(chunks: list[dict], case: EvalCase) -> list[dict]:
-    """Rank SARA retrieval chunks with statute-first, supplement-second policy."""
+def _prioritize_sara_supplement_chunks(
+    chunks: list[dict], case: EvalCase, mode: str = "vector"
+) -> list[dict]:
+    """Rank SARA retrieval chunks with statute-first, supplement-second policy.
+
+    When SARA_SUPPLEMENT_ALLOWED_REFS_ONLY is True (default), only chunks whose
+    section_id matches the case allowed_refs are kept. This prevents unrelated
+    USC26 text or IRS publication fragments from competing with the authoritative
+    SARA statute text already present in the user prompt, which would confuse
+    small models and reduce answer accuracy.
+
+    For hybrid mode, an additional intersection filter is applied: only chunks
+    that appeared in BOTH the vector and graph retrieval paths are kept. This
+    removes the parent-vs-child redundancy (e.g., §63 AND §63(c)(7) both being
+    injected) that overwhelms small-model attention. The cap is also tighter.
+    """
     allowed_refs = list(case.metadata.get("allowed_refs") or case.relevant_ids or [])
-    ranked: list[tuple[int, float, str, dict]] = []
+
+    # For hybrid: only keep chunks confirmed by BOTH retrieval paths (intersection).
+    # This removes parent/child redundancy (§63 AND §63(c)(7) from two indexes)
+    # that overwhelms small models. Fallback to all chunks if intersection is empty.
+    if mode == "hybrid":
+        consensus = [
+            c for c in chunks
+            if float(c.get("vector_score", 0.0)) > 0 and float(c.get("graph_score", 0.0)) > 0
+        ]
+        if consensus:
+            chunks = consensus
+
+    # Mode-aware cap:
+    # - graph/hybrid: cap at 2 chunks to avoid flooding the 2B model with
+    #   multiple overlapping subsection fragments (§63, §63(c), §63(c)(7) all
+    #   passing the allowed_refs filter creates redundant competing context).
+    # - vector: allow up to SARA_SUPPLEMENT_TOP_K (semantic search returns
+    #   diverse paragraphs rather than overlapping subsection hierarchy).
+    top_k = 2 if mode in ("graph", "hybrid") else cfg.SARA_SUPPLEMENT_TOP_K
+
+    ranked: list[tuple[int, int, float, str, dict]] = []
 
     for chunk in chunks:
         section_id = str(chunk.get("section_id", "")).strip()
@@ -696,29 +730,41 @@ def _prioritize_sara_supplement_chunks(chunks: list[dict], case: EvalCase) -> li
         ):
             continue
 
-        if (
-            cfg.SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS
-            and _sara_ref_matches_section(section_id, allowed_refs)
-        ):
+        is_allowed_ref_match = _sara_ref_matches_section(section_id, allowed_refs)
+
+        # When strict mode is on, skip chunks that don't match an allowed ref.
+        if cfg.SARA_SUPPLEMENT_ALLOWED_REFS_ONLY and not is_allowed_ref_match:
+            continue
+
+        if cfg.SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS and is_allowed_ref_match:
             tier = 0
+            # Within tier-0, prefer shallower (parent) sections over deep subsections.
+            # §63 (depth 0) ranks above §63(c)(7) (depth 2). The full authoritative
+            # statute section covers the subsections already; adding deep subsections
+            # creates overlapping context that confuses small models.
+            section_depth = section_id.count("(")
         elif source == "usc26":
             tier = 1
+            section_depth = 0
         elif source and source != "graph_community":
             tier = 2
+            section_depth = 0
         else:
             tier = 3
+            section_depth = 0
 
-        # Lower tier is better; higher relevance score breaks ties.
-        ranked.append((tier, -_chunk_relevance_score(chunk), section_id, chunk))
+        # Sort: tier ASC, section_depth ASC, relevance DESC, section_id ASC.
+        ranked.append((tier, section_depth, -_chunk_relevance_score(chunk), section_id, chunk))
 
     if not ranked:
+        # Fallback: strict filter yielded nothing — use all chunks ranked by score.
         ranked = [
-            (0, -_chunk_relevance_score(chunk), str(chunk.get("section_id", "")), chunk)
+            (0, 0, -_chunk_relevance_score(chunk), str(chunk.get("section_id", "")), chunk)
             for chunk in chunks
         ]
 
-    ranked.sort(key=lambda item: (item[0], item[1], item[2]))
-    return [item[3] for item in ranked[: cfg.SARA_SUPPLEMENT_TOP_K]]
+    ranked.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
+    return [item[4] for item in ranked[:top_k]]
 
 
 def _sara_max_tokens(case: EvalCase) -> int:
@@ -766,7 +812,7 @@ def run_case(
         )
         chunks = _dedupe_chunks_by_section(chunks)
         if is_sara:
-            chunks = _prioritize_sara_supplement_chunks(chunks, case)
+            chunks = _prioritize_sara_supplement_chunks(chunks, case, mode=mode)
         else:
             chunks = chunks[: cfg.TOP_K_VECTOR]
     retrieved_ids = [c["section_id"] for c in chunks]
