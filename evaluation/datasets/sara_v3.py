@@ -24,7 +24,7 @@ _CALC_MARKER_RE = re.compile(
     r"(?:step\s*\d+|=|\+|\-|\*|/|minus|plus|times|divide|therefore|final answer)",
     re.IGNORECASE,
 )
-_FINAL_ANSWER_RE = re.compile(r"final\s+answer\s*:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
+_FINAL_ANSWER_RE = re.compile(r"final\s+answer\s*:?\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 _LABEL_ENTAILMENT_RE = re.compile(r"\b(entailment|entailed|entails)\b", re.IGNORECASE)
 _LABEL_CONTRADICTION_RE = re.compile(
     r"\b(contradiction|contradictory|contradicts|contradict)\b",
@@ -87,6 +87,44 @@ def _extract_final_answer(response: str) -> str | None:
     return answer.splitlines()[0].strip()
 
 
+def _extract_tail_answer_text(response: str) -> str | None:
+    lines = [line.strip() for line in (response or "").splitlines() if line.strip()]
+    if not lines:
+        return None
+    tail = lines[-1]
+    return tail[:240]
+
+
+def _extract_final_answer_or_fallback(response: str) -> str | None:
+    final_answer = _extract_final_answer(response or "")
+    if final_answer:
+        return final_answer
+    return _extract_tail_answer_text(response or "")
+
+
+def _extract_predicted_numeric_answer(response: str) -> str | None:
+    # 1) Prefer explicit Final Answer line (best signal).
+    final_answer = _extract_final_answer(response or "")
+    if final_answer:
+        numbers = _extract_all_numbers(final_answer)
+        if numbers:
+            return numbers[-1]
+
+    # 2) If truncated, try fallback tail text.
+    fallback_answer = _extract_tail_answer_text(response or "")
+    if fallback_answer:
+        numbers = _extract_all_numbers(fallback_answer)
+        if numbers:
+            return numbers[-1]
+
+    # 3) Last numeric token in the full response as a final fallback.
+    numbers = _extract_all_numbers(response or "")
+    if numbers:
+        return numbers[-1]
+
+    return None
+
+
 def _normalize_string(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", text.lower())).strip()
 
@@ -122,7 +160,7 @@ def _canonical_label_from_text(text: str, allow_boolean: bool = False) -> str | 
 
 
 def _extract_predicted_label(response: str) -> str | None:
-    final_answer = _extract_final_answer(response or "")
+    final_answer = _extract_final_answer_or_fallback(response or "")
     if final_answer:
         predicted = _canonical_label_from_text(final_answer, allow_boolean=True)
         if predicted:
@@ -635,6 +673,7 @@ class SARAV3Dataset(Dataset):
         expected_type = str(case.metadata.get("expected_type", "freeform"))
         citation = _citation_metrics_for_case(response or "", case)
         final_answer = _extract_final_answer(response or "")
+        predicted_final_answer = _extract_final_answer_or_fallback(response or "")
 
         answer_correct = 0.0
         calc_steps_present = None
@@ -647,7 +686,7 @@ class SARAV3Dataset(Dataset):
             }
         elif expected_type == "label":
             expected_label = expected.lower()
-            predicted_label = _extract_predicted_label(response or "")
+            predicted_label = _extract_predicted_label(response or "") or "unknown"
             answer_correct = 1.0 if predicted_label == expected_label else 0.0
             test_goal_label = _label_from_test_goal(case)
             expected_label_consistent_with_test = None
@@ -661,7 +700,7 @@ class SARAV3Dataset(Dataset):
                 "total": 1.0,
                 "feedback": (
                     f"Expected {expected}; "
-                    f"predicted_label={predicted_label or 'none'}; "
+                    f"predicted_label={predicted_label}; "
                     f"answer_correct={bool(answer_correct)}; "
                     f"citation_precision={citation['citation_fact_precision']:.2f}"
                 ),
@@ -673,6 +712,7 @@ class SARAV3Dataset(Dataset):
             expected_num = _extract_first_number(expected)
             number_source = final_answer if final_answer else (response or "")
             response_numbers = _extract_all_numbers(number_source)
+            predicted_numeric_answer = _extract_predicted_numeric_answer(response or "")
             answer_correct = 1.0 if expected_num and expected_num in response_numbers else 0.0
 
             calc_steps_present = bool(
@@ -693,10 +733,12 @@ class SARAV3Dataset(Dataset):
                 "total": 1.0,
                 "feedback": (
                     f"Expected numeric {expected_num}; "
+                    f"predicted_numeric={predicted_numeric_answer or 'none'}; "
                     f"answer_correct={bool(answer_correct)}; "
                     f"calc_steps_present={bool(calc_steps_present)}; "
                     f"citation_precision={citation['citation_fact_precision']:.2f}"
                 ),
+                "predicted_numeric_answer": predicted_numeric_answer,
             }
         elif expected_type == "string":
             expected_norm = _normalize_string(expected)
@@ -717,6 +759,17 @@ class SARAV3Dataset(Dataset):
             rubric = f"[+1.00] Response matches expected SARA answer: {expected}"
             judge_result = judge_fn(response, rubric)
             answer_correct = float(judge_result.get("earned") or 0.0)
+
+        if expected_type == "label":
+            judge_result["predicted_final_answer"] = str(
+                judge_result.get("predicted_label") or "unknown"
+            )
+        elif expected_type == "numeric":
+            judge_result["predicted_final_answer"] = str(
+                judge_result.get("predicted_numeric_answer") or predicted_final_answer or "unknown"
+            )
+        else:
+            judge_result["predicted_final_answer"] = str(predicted_final_answer or "unknown")
 
         judge_result["answer_correct"] = round(answer_correct, 4)
         judge_result["calculation_steps_present"] = calc_steps_present
