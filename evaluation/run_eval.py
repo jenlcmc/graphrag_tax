@@ -31,7 +31,9 @@ import re
 import socket
 import sys
 import time
+import threading
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib import error as urlerror
 from urllib import request as urlrequest
@@ -150,25 +152,37 @@ def _parse_judge_json(raw: str) -> dict:
 _SYSTEM_WITH_CONTEXT = """\
 You are a knowledgeable U.S. federal tax assistant.
 
-Cite the specific statute or IRS publication for every substantive claim \
-(e.g., "Under 26 USC §63...", "Per IRS Pub. 17..."). \
-Show calculation steps for any numeric question.
+For every answer you must:
+1. Identify the relevant legal rules and cite each statute or IRS publication \
+used (e.g., "Under 26 USC §63...", "Per IRS Pub. 17...").
+2. Explain how those rules apply to the specific facts or question.
+3. For numeric questions, show full step-by-step arithmetic before the answer.
 
 {context_block}"""
 
 _SYSTEM_NO_CONTEXT = """\
-You are a knowledgeable U.S. federal tax assistant. \
-Answer using your training knowledge. Cite statutory sections and IRS \
-publications where relevant. Show calculation steps for numeric questions."""
+You are a knowledgeable U.S. federal tax assistant answering from training knowledge.
+
+For every answer you must:
+1. Identify the relevant legal rules and cite each statute or IRS publication used.
+2. Explain how those rules apply to the specific facts or question.
+3. For numeric questions, show full step-by-step arithmetic before the answer."""
 
 _SARA_SYSTEM_APPEND = """\
 
-SARA-specific output requirements:
-- Use only provided case facts for taxpayer-specific facts and numbers.
-- Use legal rules from citations and retrieved law excerpts.
-- Cite only section references that appear in the allowed citation list.
-- For numeric cases, show clear step-by-step arithmetic before the final answer.
-- End with a final line in this exact format: Final Answer: <value-or-label>
+SARA-specific output format (required for all answer types):
+
+Step 1 — Legal Rule: State the applicable rule from the cited statute or IRS \
+guidance. Quote or paraphrase the key condition directly.
+Step 2 — Facts Applied: Map each relevant case fact to the legal condition. \
+Show which facts satisfy or fail each condition.
+Step 3 — Reasoning: Explain why the facts do or do not satisfy the rule.
+Final Answer: <value-or-label>
+
+Additional constraints:
+- Use ONLY the provided case facts for taxpayer-specific values.
+- Cite ONLY section references that appear in the allowed citation list.
+- Every step must be present, even for simple cases.
 """
 
 
@@ -217,35 +231,47 @@ def _clip_excerpt(text: str, max_chars: int) -> str:
 
 
 def _build_sara_user_prompt(case: EvalCase) -> str:
-    """Build SARA case prompt with explicit facts and citation constraints."""
+    """Build SARA case prompt with explicit facts, citation constraints, and reasoning structure."""
     text_context = str(case.metadata.get("context", "")).strip()
     structured_facts = str(case.metadata.get("facts", "")).strip()
     expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
     allowed_refs = case.relevant_ids or []
     allowed_text = ", ".join(allowed_refs) if allowed_refs else "None"
 
-    instructions = [
-        "1) Use facts for taxpayer details and values.",
-        "2) Cite only allowed section citations.",
-    ]
-    if expected_type == "numeric":
-        instructions.append("3) Show arithmetic steps for numeric answers.")
-        instructions.append("4) End with: Final Answer: <numeric-value>.")
-    elif expected_type == "label":
+    if expected_type == "label":
         label_options = _sara_label_options(case)
-        if "Unknown" in label_options:
-            instructions.append(
-                "3) This is a label decision task; Final Answer must be exactly one of: Entailment, Contradiction, Unknown."
-            )
-        else:
-            instructions.append(
-                "3) This is a binary label decision task; Final Answer must be exactly Entailment or Contradiction (do not answer Unknown)."
-            )
-        instructions.append("4) If you reason with booleans, map True=>Entailment and False=>Contradiction.")
+        label_choices = " / ".join(label_options)
+        type_instructions = (
+            f"This is a legal entailment task. Follow the three-step format:\n"
+            f"  Step 1 — Legal Rule: What condition does the cited law impose?\n"
+            f"  Step 2 — Facts Applied: Which case facts satisfy or violate that condition?\n"
+            f"  Step 3 — Reasoning: Why does this lead to Entailment or Contradiction?\n"
+            f"  Final Answer must be exactly one of: {label_choices}"
+        )
+    elif expected_type == "numeric":
+        type_instructions = (
+            "This is a numeric calculation task. Follow the three-step format:\n"
+            "  Step 1 — Legal Rule: State the formula or threshold from the cited law.\n"
+            "  Step 2 — Facts Applied: Plug in the case values.\n"
+            "  Step 3 — Arithmetic: Show every calculation step.\n"
+            "  Final Answer: <the numeric result>"
+        )
+    elif expected_type == "string":
+        type_instructions = (
+            "This is a factual lookup task. Follow the three-step format:\n"
+            "  Step 1 — Legal Rule: What does the cited law say about this?\n"
+            "  Step 2 — Facts Applied: Which case details are relevant?\n"
+            "  Step 3 — Reasoning: How do you arrive at your answer?\n"
+            "  Final Answer: <the value>"
+        )
     else:
-        instructions.append("3) End with: Final Answer: <value-or-label>.")
-
-    instruction_text = "\n".join(instructions)
+        type_instructions = (
+            "Follow the three-step format:\n"
+            "  Step 1 — Legal Rule: Identify and quote the relevant rule.\n"
+            "  Step 2 — Facts Applied: Apply the rule to the case facts.\n"
+            "  Step 3 — Reasoning: Explain your conclusion.\n"
+            "  Final Answer: <value-or-label>"
+        )
 
     return (
         "SARA Case Text (%Text):\n"
@@ -254,70 +280,73 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
         f"{structured_facts or '(no structured facts provided)'}\n\n"
         "Question:\n"
         f"{case.question}\n\n"
-        "Allowed section citations (must come from facts/question):\n"
+        "Allowed section citations:\n"
         f"{allowed_text}\n\n"
-        "Instructions:\n"
-        f"{instruction_text}"
+        "Task instructions:\n"
+        f"{type_instructions}"
     )
 
 
 def _build_sara_system_append(case: EvalCase) -> str:
+    """Return a case-type-specific system append reinforcing the required output format."""
     expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
+
     if expected_type == "label":
         label_options = _sara_label_options(case)
-        if "Unknown" in label_options:
-            label_line = "- For label tasks, the final answer must be exactly one of: Entailment, Contradiction, Unknown."
-        else:
-            label_line = "- For label tasks, the final answer must be exactly one of: Entailment, Contradiction."
+        label_choices = " / ".join(label_options)
         return (
-            f"{_SARA_SYSTEM_APPEND}\n"
-            f"{label_line}\n"
-            "- Do not output a numeric value for label tasks."
+            f"{_SARA_SYSTEM_APPEND}"
+            f"- Final Answer for this label task must be exactly one of: {label_choices}\n"
+            "- Do not output a number for a label task.\n"
         )
     if expected_type == "numeric":
         return (
-            f"{_SARA_SYSTEM_APPEND}\n"
-            "- For numeric tasks, include arithmetic steps and a numeric Final Answer."
+            f"{_SARA_SYSTEM_APPEND}"
+            "- Show all arithmetic steps before the Final Answer.\n"
+            "- Final Answer must be a number (e.g., 'Final Answer: 4200').\n"
         )
     return _SARA_SYSTEM_APPEND
 
 
-def call_llm(system: str, question: str, model_id: str) -> str:
-    """Call Claude or Gemini and return the response text."""
+def call_llm(system: str, question: str, model_id: str, max_tokens: int | None = None) -> str:
+    """Call the configured LLM and return the response text."""
     if model_id.startswith("claude"):
-        return _call_claude(system, question, model_id)
+        return _call_claude(system, question, model_id, max_tokens)
     if model_id.startswith("gemini"):
-        return _call_gemini(system, question, model_id)
+        return _call_gemini(system, question, model_id, max_tokens)
     if model_id.startswith("ollama:"):
-        return _call_ollama(system, question, model_id)
+        return _call_ollama(system, question, model_id, max_tokens)
     raise ValueError(f"Unsupported model: {model_id!r}")
 
 
-def _call_claude(system: str, question: str, model_id: str) -> str:
+def _call_claude(system: str, question: str, model_id: str, max_tokens: int | None = None) -> str:
     import anthropic
     client = anthropic.Anthropic(api_key=cfg.ANTHROPIC_API_KEY)
     message = client.messages.create(
         model=model_id,
-        max_tokens=2048,
+        max_tokens=max_tokens or 2048,
         system=system,
         messages=[{"role": "user", "content": question}],
     )
     return message.content[0].text
 
 
-def _call_gemini(system: str, question: str, model_id: str) -> str:
+def _call_gemini(system: str, question: str, model_id: str, max_tokens: int | None = None) -> str:
     from google import genai
     client = genai.Client(api_key=cfg.GEMINI_API_KEY)
     from google.genai import types
     response = client.models.generate_content(
         model=model_id,
         contents=question,
-        config=types.GenerateContentConfig(system_instruction=system, max_output_tokens=2048),
+        config=types.GenerateContentConfig(
+            system_instruction=system,
+            max_output_tokens=max_tokens or 2048,
+        ),
     )
     return response.text
 
 
-def _call_ollama(system: str, question: str, model_id: str) -> str:
+def _call_ollama(system: str, question: str, model_id: str, max_tokens: int | None = None) -> str:
     model_name = model_id.split("ollama:", 1)[1] if model_id.startswith("ollama:") else model_id
     payload = {
         "model": model_name,
@@ -328,6 +357,25 @@ def _call_ollama(system: str, question: str, model_id: str) -> str:
         "stream": False,
         "think": cfg.OLLAMA_THINK,
     }
+
+    options: dict[str, int | float] = {}
+    if cfg.OLLAMA_NUM_CTX > 0:
+        options["num_ctx"] = int(cfg.OLLAMA_NUM_CTX)
+    # max_tokens (per-call override) takes priority over the global OLLAMA_NUM_PREDICT.
+    effective_predict = max_tokens or (cfg.OLLAMA_NUM_PREDICT if cfg.OLLAMA_NUM_PREDICT != 0 else None)
+    if effective_predict is not None:
+        options["num_predict"] = int(effective_predict)
+    if cfg.OLLAMA_TEMPERATURE >= 0:
+        options["temperature"] = float(cfg.OLLAMA_TEMPERATURE)
+    if 0.0 < cfg.OLLAMA_TOP_P <= 1.0:
+        options["top_p"] = float(cfg.OLLAMA_TOP_P)
+    # Push model layers to GPU. OLLAMA_NUM_GPU=99 forces all layers onto GPU;
+    # Ollama caps at the model's actual layer count so 99 is always safe.
+    if cfg.OLLAMA_NUM_GPU >= 0:
+        options["num_gpu"] = int(cfg.OLLAMA_NUM_GPU)
+    if options:
+        payload["options"] = options
+
     body = json.dumps(payload).encode("utf-8")
     endpoint = cfg.OLLAMA_BASE_URL.rstrip("/") + "/api/chat"
     req = urlrequest.Request(
@@ -437,6 +485,20 @@ def _extract_response_citations(text: str) -> list[str]:
     return sorted(refs)
 
 
+def _is_citation_supported(ref_lower: str, retrieved_lower: set[str]) -> bool:
+    """Return True if ref is grounded by any retrieved section.
+
+    Supports hierarchical matching: a cited parent section (e.g. "26 usc §32")
+    is considered supported when a subsection (e.g. "26 usc §32(c)") was retrieved.
+    """
+    if ref_lower in retrieved_lower:
+        return True
+    return any(
+        rid == ref_lower or rid.startswith(ref_lower + "(")
+        for rid in retrieved_lower
+    )
+
+
 def _compute_citation_metrics(response: str, retrieved_ids: list[str]) -> dict:
     """Compute citation precision and grounding-rate style metrics.
 
@@ -445,11 +507,9 @@ def _compute_citation_metrics(response: str, retrieved_ids: list[str]) -> dict:
     """
     retrieved_lower = {rid.lower() for rid in retrieved_ids}
     citations = _extract_response_citations(response)
-    supported = [ref for ref in citations if ref.lower() in retrieved_lower]
+    supported = [ref for ref in citations if _is_citation_supported(ref.lower(), retrieved_lower)]
 
-    citation_precision = None
-    if citations:
-        citation_precision = round(len(supported) / len(citations), 4)
+    citation_precision = round(len(supported) / len(citations), 4) if citations else None
 
     citation_sentences = 0
     grounded_sentences = 0
@@ -458,18 +518,15 @@ def _compute_citation_metrics(response: str, retrieved_ids: list[str]) -> dict:
         if not sentence_refs:
             continue
         citation_sentences += 1
-        if any(ref.lower() in retrieved_lower for ref in sentence_refs):
+        if any(_is_citation_supported(ref.lower(), retrieved_lower) for ref in sentence_refs):
             grounded_sentences += 1
 
-    grounding_rate = None
-    if citation_sentences > 0:
-        grounding_rate = round(grounded_sentences / citation_sentences, 4)
+    grounding_rate = round(grounded_sentences / citation_sentences, 4) if citation_sentences > 0 else None
 
     return {
         "n_citations": len(citations),
         "n_supported_citations": len(supported),
         "citation_precision": citation_precision,
-        "citation_coverage": round(len(supported) / len(citations), 4) if citations else None,
         "citation_sentences": citation_sentences,
         "grounded_sentences": grounded_sentences,
         "grounding_rate": grounding_rate,
@@ -585,6 +642,20 @@ def _dedupe_chunks_by_section(chunks: list[dict]) -> list[dict]:
     return ranked
 
 
+def _sara_max_tokens(case: EvalCase) -> int:
+    """Return an appropriate max-token cap for a SARA case.
+
+    SARA label cases need only a short label + brief reasoning; numeric cases
+    need arithmetic steps. Capping output avoids wasting GPU time on padding.
+    """
+    expected_type = str(case.metadata.get("expected_type", "freeform")).lower()
+    return {
+        "label":   cfg.SARA_MAX_TOKENS_LABEL,
+        "numeric": cfg.SARA_MAX_TOKENS_NUMERIC,
+        "string":  cfg.SARA_MAX_TOKENS_STRING,
+    }.get(expected_type, cfg.SARA_MAX_TOKENS_DEFAULT)
+
+
 def run_case(
     case: EvalCase,
     dataset,
@@ -625,7 +696,8 @@ def run_case(
         user_prompt = _build_sara_user_prompt(case) if is_sara else case.question
         if is_sara:
             system = f"{system}{_build_sara_system_append(case)}"
-        response = call_llm(system, user_prompt, model_id)
+        max_tokens = _sara_max_tokens(case) if is_sara else None
+        response = call_llm(system, user_prompt, model_id, max_tokens=max_tokens)
 
     # Score via the dataset's own score() method.
     # TaxBench returns both LLM-as-judge fields AND rouge1/rouge2/rougeL.
@@ -1010,53 +1082,80 @@ def main() -> None:
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
     mode_summaries: dict[str, dict] = {}
+    _print_lock = threading.Lock()
+
+    def _run_one(idx: int, total: int, case: EvalCase) -> tuple[int, dict]:
+        """Run one case and return (idx, result). Thread-safe."""
+        t0 = time.monotonic()
+        with _print_lock:
+            print(f"  [{idx}/{total}] {case.id[:50]}", flush=True)
+        try:
+            result = run_case(
+                case=case,
+                dataset=dataset,
+                retriever=retriever,
+                model_id=model_id,
+                mode=mode,
+                dry_run=args.dry_run,
+                judge_model_id=judge_id,
+                skip_scoring=args.skip_scoring,
+            )
+        except Exception as exc:
+            with _print_lock:
+                print(f"    [{idx}] ERROR: {exc}", flush=True)
+            result = {
+                "id": case.id,
+                "question": case.question,
+                "rubric": case.rubric,
+                "response": "",
+                "mode": mode,
+                "model": model_id,
+                "retrieved_ids": [],
+                "n_chunks": 0,
+                "retrieval_metrics": {},
+                "citation_metrics": {},
+                "scoring": {
+                    "earned": None,
+                    "total": None,
+                    "feedback": f"Case failed: {exc}",
+                    "_case_error": True,
+                },
+                "error": str(exc),
+            }
+        elapsed = time.monotonic() - t0
+        with _print_lock:
+            print(f"    [{idx}] done in {elapsed:.1f}s", flush=True)
+        return idx, result
 
     for mode in modes:
-        tag = f"dryrun" if args.dry_run else args.model
+        tag = "dryrun" if args.dry_run else args.model
         out_path = args.results_dir / f"{dataset.name}__{tag}__{mode}.json"
 
         if out_path.exists() and not args.overwrite:
             print(f"Skipping {out_path.name} (already exists; use --overwrite)")
             continue
 
-        print(f"\n--- {dataset.name} | model={model_id} | mode={mode} ---")
+        print(f"\n--- {dataset.name} | model={model_id} | mode={mode} "
+              f"| workers={cfg.EVAL_CONCURRENCY} ---")
 
-        results = []
-        for i, case in enumerate(cases, 1):
-            print(f"  [{i}/{len(cases)}] {case.id[:40]}")
-            try:
-                result = run_case(
-                    case=case,
-                    dataset=dataset,
-                    retriever=retriever,
-                    model_id=model_id,
-                    mode=mode,
-                    dry_run=args.dry_run,
-                    judge_model_id=judge_id,
-                    skip_scoring=args.skip_scoring,
-                )
-            except Exception as exc:
-                print(f"    ERROR: {exc}")
-                result = {
-                    "id": case.id,
-                    "question": case.question,
-                    "rubric": case.rubric,
-                    "response": "",
-                    "mode": mode,
-                    "model": model_id,
-                    "retrieved_ids": [],
-                    "n_chunks": 0,
-                    "retrieval_metrics": {},
-                    "citation_metrics": {},
-                    "scoring": {
-                        "earned": None,
-                        "total": None,
-                        "feedback": f"Case failed: {exc}",
-                        "_case_error": True,
-                    },
-                    "error": str(exc),
+        n = len(cases)
+        results_map: dict[int, dict] = {}
+
+        if cfg.EVAL_CONCURRENCY <= 1:
+            for idx, case in enumerate(cases, 1):
+                i, result = _run_one(idx, n, case)
+                results_map[i] = result
+        else:
+            with ThreadPoolExecutor(max_workers=cfg.EVAL_CONCURRENCY) as pool:
+                futures = {
+                    pool.submit(_run_one, idx, n, case): idx
+                    for idx, case in enumerate(cases, 1)
                 }
-            results.append(result)
+                for future in as_completed(futures):
+                    i, result = future.result()
+                    results_map[i] = result
+
+        results = [results_map[i] for i in range(1, n + 1)]
 
         # Summary stats
         _print_summary(results)

@@ -1,7 +1,22 @@
 -r requirements.txt
 
-# Laptop / CPU profile (recommended for Intel Mac and low-memory machines).
-# Runtime knobs for better stability/perf on older hardware:
-#   LOW_RESOURCE_MODE=1
-#   DUAL_VECTOR_EMBEDDING=0
+# ── Laptop CPU profile (MacBook Pro 2019, Intel Mac) ─────────────────────────
+# Target: Intel Core i7, no discrete GPU, Ollama on CPU.
+#
+# No extra packages needed beyond the base requirements.txt.
+#
+# Recommended .env additions for this profile:
+#   LOW_RESOURCE_MODE=1        # smaller embedding model + reduced batch sizes
+#   DUAL_VECTOR_EMBEDDING=0    # skip section-id index to halve embedding time
 #   VECTOR_SEARCH_BACKEND=faiss
+#   EMBEDDING_DEVICE=cpu
+#   OLLAMA_NUM_GPU=0           # Intel Mac has no compatible GPU; skip GPU offload
+#   OLLAMA_NUM_CTX=2048        # smaller context → faster CPU prefill
+#   OLLAMA_TIMEOUT_SECONDS=300 # CPU inference is slower; allow more time per call
+#
+# Ollama setup on macOS:
+#   brew install ollama
+#   ollama serve               # starts in background
+#   ollama pull qwen3.5:2b
+#
+# Expected speed: ~60-120 s/case on CPU. Use --limit 20 for quick smoke-tests.

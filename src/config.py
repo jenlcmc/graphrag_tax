@@ -231,6 +231,31 @@ OLLAMA_TIMEOUT_SECONDS = _env_int("OLLAMA_TIMEOUT_SECONDS", 180)
 OLLAMA_MAX_RETRIES = _env_int("OLLAMA_MAX_RETRIES", 2)
 OLLAMA_RETRY_BACKOFF_SECONDS = _env_int("OLLAMA_RETRY_BACKOFF_SECONDS", 2)
 OLLAMA_THINK = _env_bool("OLLAMA_THINK", False)
+# Optional Ollama per-request generation controls.
+# Use 0 / negative sentinel defaults to leave the daemon model defaults unchanged.
+OLLAMA_NUM_CTX     = max(0, _env_int("OLLAMA_NUM_CTX", 0))
+OLLAMA_NUM_PREDICT = _env_int("OLLAMA_NUM_PREDICT", 0)
+OLLAMA_TEMPERATURE = _env_float("OLLAMA_TEMPERATURE", -1.0)
+OLLAMA_TOP_P       = _env_float("OLLAMA_TOP_P", -1.0)
+# Number of GPU layers to offload (-1 = Ollama default; 99 = push all layers to GPU).
+# Set to 99 to maximise GPU usage. Ollama caps at the model's actual layer count.
+OLLAMA_NUM_GPU = _env_int("OLLAMA_NUM_GPU", 99)
+
+# ---------------------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------------------
+# How many cases to run in parallel. 1 = sequential.
+# Set > 1 only when OLLAMA_NUM_PARALLEL is also raised server-side (env var
+# on the Ollama process), otherwise concurrent requests queue and offer no gain.
+EVAL_CONCURRENCY = max(1, _env_int("EVAL_CONCURRENCY", 1))
+
+# Per-answer-type token caps for SARA.
+# All types now require a three-step reasoning chain (Rule → Facts → Reasoning)
+# before the Final Answer, so label cases need more room than a bare label would.
+SARA_MAX_TOKENS_LABEL   = _env_int("SARA_MAX_TOKENS_LABEL",    600)
+SARA_MAX_TOKENS_NUMERIC = _env_int("SARA_MAX_TOKENS_NUMERIC",  900)
+SARA_MAX_TOKENS_STRING  = _env_int("SARA_MAX_TOKENS_STRING",   600)
+SARA_MAX_TOKENS_DEFAULT = _env_int("SARA_MAX_TOKENS_DEFAULT",  800)
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GEMINI_API_KEY    = os.getenv("GEMINI_API_KEY", "")

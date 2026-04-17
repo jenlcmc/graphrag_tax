@@ -1,12 +1,26 @@
 -r requirements.txt
 
-# Desktop GPU profile (CUDA).
-# 1) Install CUDA-enabled torch that matches your driver (example: cu121):
-#    pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.2.2
-# 2) Optional FAISS GPU backend (conda recommended):
-#    conda install -c pytorch -c nvidia faiss-gpu
+# ── Desktop GPU profile (Windows / Linux, CUDA) ──────────────────────────────
+# Target: RTX 3070 (8 GB VRAM) running Ollama + local FAISS/embedding GPU.
 #
-# Notes:
-# - faiss-gpu is optional in this project because vector search supports
-#   torch CUDA fallback when FAISS GPU bindings are unavailable.
-# - faiss-gpu-cuvs is not required.
+# Step 1 — CUDA-enabled PyTorch (match your driver; cu121 = CUDA 12.1):
+#   pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.2.2
+#
+# Step 2 — FAISS GPU (optional; conda is the easiest path):
+#   conda install -c pytorch -c nvidia faiss-gpu
+#   Note: faiss-gpu is optional. When unavailable the pipeline falls back to
+#   torch-matmul CUDA search automatically (VECTOR_SEARCH_BACKEND=auto).
+#
+# Step 3 — Ollama GPU (run BEFORE starting the Ollama server):
+#   Windows PowerShell:   $env:CUDA_VISIBLE_DEVICES="0"
+#   Linux/WSL:            export CUDA_VISIBLE_DEVICES=0
+#   Then start Ollama:    ollama serve
+#   Pull the model:       ollama pull qwen3.5:2b
+#   Verify GPU layers:    ollama ps   (should show "100% GPU")
+#
+# Recommended .env additions for this profile:
+#   EMBEDDING_DEVICE=cuda
+#   FAISS_USE_GPU=true
+#   OLLAMA_NUM_GPU=99          # already the default; forces all layers to GPU
+#   OLLAMA_NUM_CTX=4096        # smaller KV cache → more VRAM for model weights
+#   EVAL_CONCURRENCY=1         # raise to 2 only if OLLAMA_NUM_PARALLEL=2 server-side

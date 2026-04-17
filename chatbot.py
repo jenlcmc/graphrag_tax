@@ -207,6 +207,19 @@ class TaxChatbot:
             "stream": False,
             "think": cfg.OLLAMA_THINK,
         }
+
+        options: dict[str, int | float] = {}
+        if cfg.OLLAMA_NUM_CTX > 0:
+            options["num_ctx"] = int(cfg.OLLAMA_NUM_CTX)
+        if int(cfg.OLLAMA_NUM_PREDICT) != 0:
+            options["num_predict"] = int(cfg.OLLAMA_NUM_PREDICT)
+        if cfg.OLLAMA_TEMPERATURE >= 0:
+            options["temperature"] = float(cfg.OLLAMA_TEMPERATURE)
+        if 0.0 < cfg.OLLAMA_TOP_P <= 1.0:
+            options["top_p"] = float(cfg.OLLAMA_TOP_P)
+        if options:
+            payload["options"] = options
+
         body = json.dumps(payload).encode("utf-8")
         endpoint = cfg.OLLAMA_BASE_URL.rstrip("/") + "/api/chat"
         req = urlrequest.Request(

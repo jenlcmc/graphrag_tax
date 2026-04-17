@@ -690,6 +690,10 @@ All settings live in [src/config.py](src/config.py).
 | `EXCLUDED_SOURCES`             | `{i1040nr, p519}`   | Non-resident sources, excluded              |
 | `LOW_RESOURCE_MODE`            | auto (Intel Mac)    | Smaller model + smaller batches             |
 | `OLLAMA_MODEL`                 | `qwen3.5:2b`        | Local model used when `--model ollama`      |
+| `OLLAMA_NUM_CTX`               | 0                   | Per-request context length (0 = model default) |
+| `OLLAMA_NUM_PREDICT`           | 0                   | Max output tokens (-1 or 0 = model/default behavior) |
+| `OLLAMA_TEMPERATURE`           | -1.0                | Sampling temperature (-1 = model default)   |
+| `OLLAMA_TOP_P`                 | -1.0                | Top-p sampling (0 or negative = model default) |
 | `FAISS_USE_GPU`                | `True`              | Promote FAISS indexes to CUDA when possible |
 | `VECTOR_SEARCH_BACKEND`        | `auto`              | `auto`, `faiss`, or `torch`                 |
 | `VECTOR_TORCH_FP16`            | `True`              | fp16 torch CUDA search for speed            |
@@ -711,6 +715,8 @@ and add a display label to `src/ingestion/irs_xml_parser.SOURCE_LABELS`.
 
 For local inference endpoint configuration, set `OLLAMA_BASE_URL`
 (default: `http://localhost:11434`).
+You can also set per-request generation options via `OLLAMA_NUM_CTX`,
+`OLLAMA_NUM_PREDICT`, `OLLAMA_TEMPERATURE`, and `OLLAMA_TOP_P`.
 
 ## Results (20 counts)
 

@@ -5,7 +5,7 @@ Scoring:
 
 Alpha is adaptive:
   - Default (broad/semantic query): HYBRID_ALPHA_DEFAULT = 0.6  (vector-weighted)
-  - Explicit § reference in query:  HYBRID_ALPHA_SECTION_REF = 0.35 (graph-weighted)
+    - Explicit § reference in query:  HYBRID_ALPHA_SECTION_REF = 0.5  (more balanced)
 
 This means queries like "what is the standard deduction?" lean on vector similarity,
 while queries like "what does §32(c) say about investment income?" lean on the
