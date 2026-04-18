@@ -211,19 +211,13 @@ GRAPH_COVERAGE_PENALTY_INFERRED = _env_float("GRAPH_COVERAGE_PENALTY_INFERRED", 
 GRAPH_COVERAGE_PENALTY_FALLBACK = _env_float("GRAPH_COVERAGE_PENALTY_FALLBACK", 0.45)
 
 # --------------------------------------------------------------------------
-# Hybrid retrieval blending
-# score = alpha * vector_score + (1 - alpha) * graph_score
+# Hybrid retrieval — Reciprocal Rank Fusion
+# rrf_score(d) = Σ_i  weight_i / (RRF_K + rank_i(d))
 # --------------------------------------------------------------------------
-# Graph-weighted: vector adds noisy IRS pub fragments on statute-focused queries.
-# With three-step reasoning prompts the model reads every chunk, so noise hurts.
-HYBRID_ALPHA_DEFAULT: float = 0.50
-# When the query cites an explicit IRC § reference, lean heavily on graph for precision cites.
-HYBRID_ALPHA_SECTION_REF: float = 0.40
-HYBRID_ALPHA_SECTION_REF: float = 0.2
+# Standard RRF constant (60 is the empirically established default).
+HYBRID_RRF_K = max(1, _env_int("HYBRID_RRF_K", 60))
 # Cache merged retrieval results by (mode, query, k, depth).
 HYBRID_QUERY_CACHE_SIZE = max(0, _env_int("HYBRID_QUERY_CACHE_SIZE", 1024))
-# Normalize vector/graph scores before blending to reduce channel scale mismatch.
-HYBRID_SCORE_NORMALIZE = _env_bool("HYBRID_SCORE_NORMALIZE", True)
 
 # --------------------------------------------------------------------------
 # Graph linking and audit
