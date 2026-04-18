@@ -107,7 +107,7 @@ def _print_group_report(
 ) -> None:
     print(f"\n=== {dataset} | {model} ===")
 
-    mode_order = ["none", "vector", "graph", "hybrid"]
+    mode_order = ["none", "vector", "graph", "hybrid", "oracle"]
     present_modes = [mode for mode in mode_order if mode in mode_payloads]
     summaries = {mode: _summarize_payload(mode_payloads[mode]) for mode in present_modes}
 

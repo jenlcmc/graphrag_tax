@@ -288,6 +288,8 @@ def _build_sara_user_prompt(case: EvalCase, mode: str) -> str:
     sara_statutes = str(case.metadata.get("sara_statutes", "")).strip()
     if mode == "oracle" and sara_statutes:
         statute_block = f"\nSARA Authoritative Statute Text (Oracle Gold Context):\n{sara_statutes}\n"
+
+        #print(statute_block)
     else:
         # None, Vector, Graph, Hybrid DO NOT get the oracle text!
         # `none` tests parametric memory. RAG modes test retrieved chunk quality!
@@ -1222,7 +1224,7 @@ def main() -> None:
     _case_position = {c.id: i for i, c in enumerate(cases, 1)}
 
     for mode in modes:
-        tag = "dryrun" if args.dry_run else args.model
+        tag = "dryrun" if args.dry_run else args.model.replace(":", "_")
         out_path = args.results_dir / f"{dataset.name}__{tag}__{mode}.json"
         partial_path = out_path.with_suffix(".partial.jsonl")
 

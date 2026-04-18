@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sys
 from collections import Counter
@@ -143,11 +144,13 @@ def _file_snapshot(path: Path) -> dict:
 
 
 def _source_snapshot(
-    usc_path: Path,
+    usc_path: Path | None,
     irs_sources: list[tuple[str, Path, str]],
     sara_source_files: list[Path],
 ) -> list[dict]:
-    snapshot = [{"source": "usc26", "format": "xml", **_file_snapshot(usc_path)}]
+    snapshot = []
+    if usc_path is not None:
+        snapshot.append({"source": "usc26", "format": "xml", **_file_snapshot(usc_path)})
     for source, path, fmt in irs_sources:
         snapshot.append({"source": source, "format": fmt, **_file_snapshot(path)})
     for path in sara_source_files:
@@ -180,6 +183,36 @@ def _all_files_exist(paths: list[Path]) -> bool:
 def _count_by_source(chunks: list[dict]) -> dict[str, int]:
     counter = Counter(chunk.get("source", "") for chunk in chunks)
     return {key: counter[key] for key in sorted(counter) if key}
+
+
+def _build_sara_only_chunks(
+    sara_source_files: list[Path],
+) -> tuple[list[dict], dict[str, int]]:
+    print("Building ONLY SARA statutes (skipping USC26 and IRS)...")
+    sara_chunks: list[dict] = []
+    per_source_counts: dict[str, int] = {}
+    if sara_source_files:
+        sara_source_dir = sara_source_files[0].parent
+        sara_chunks = parse_sara_source(sara_source_dir, source="sara_source")
+        per_source_counts["sara_source"] = len(sara_chunks)
+        print(
+            "    sara_source (text): "
+            f"{len(sara_chunks)} chunks from {len(sara_source_files)} files"
+        )
+    
+    print("Loading spaCy model and annotating cross-references...")
+    nlp = load_nlp(cfg.SPACY_MODEL)
+    all_chunks = annotate_chunks(sara_chunks, nlp)
+
+    if cfg.ENABLE_SENTENCE_SPLIT:
+        print("Splitting oversized chunks at sentence boundaries...")
+        all_chunks = apply_to_all(all_chunks, nlp, cfg.MAX_CHUNK_CHARS)
+        print(f"  {len(all_chunks)} total chunks after splitting")
+    else:
+        print("Skipping sentence splitting (low-resource mode)")
+        print(f"  {len(all_chunks)} total chunks")
+
+    return all_chunks, per_source_counts
 
 
 def _build_chunks(
@@ -237,7 +270,7 @@ def _build_chunks(
     return all_chunks, per_source_counts
 
 
-def _graph_build_and_audit(all_chunks: list[dict]) -> dict:
+def _graph_build_and_audit(all_chunks: list[dict], sara_only_mode: bool) -> dict:
     print("Building GraphRAG knowledge graph with community detection...")
     graph_idx = GraphIndex()
     graph_idx.build(all_chunks)
@@ -267,7 +300,7 @@ def _graph_build_and_audit(all_chunks: list[dict]) -> dict:
         if len(report["issues"]) > 20:
             print("  - ...")
 
-        if cfg.GRAPH_AUDIT_STRICT:
+        if cfg.GRAPH_AUDIT_STRICT and not sara_only_mode:
             raise RuntimeError(
                 "Graph audit failed in strict mode. "
                 f"See {cfg.GRAPH_AUDIT_FILE} for full details."
@@ -335,25 +368,34 @@ def _print_device_summary() -> None:
 
 
 def main() -> None:
+    sara_only_mode = os.getenv("SARA_ONLY", "0").strip() in ("1", "true", "yes")
+
     cfg.DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
     print(f"Using knowledge profile : {cfg.KNOWLEDGE_PROFILE}")
     print(f"Using knowledge directory: {cfg.KNOWLEDGE_DIR}")
     print(f"Using output directory  : {cfg.DATA_PROCESSED}")
+    if sara_only_mode:
+        print("SARA_ONLY mode enabled. Ignoring USC26 and IRS publications.")
     _print_device_summary()
 
-    if not cfg.USC26_XML.exists():
+    if not sara_only_mode and not cfg.USC26_XML.exists():
         raise FileNotFoundError(
             "USC XML not found at "
             f"{cfg.USC26_XML}. "
             "Set KNOWLEDGE_PROFILE to a folder containing usc26.xml."
         )
 
-    irs_sources = discover_irs_sources(cfg.KNOWLEDGE_DIR, cfg.EXCLUDED_SOURCES)
     sara_source_files = discover_sara_source_files(cfg.KNOWLEDGE_DIR)
-
-    source_snapshot = _source_snapshot(cfg.USC26_XML, irs_sources, sara_source_files)
-    source_fingerprint = _sha256_json({"snapshot": source_snapshot})
+    
+    if sara_only_mode:
+        irs_sources = []
+        source_snapshot = _source_snapshot(None, irs_sources, sara_source_files)
+    else:
+        irs_sources = discover_irs_sources(cfg.KNOWLEDGE_DIR, cfg.EXCLUDED_SOURCES)
+        source_snapshot = _source_snapshot(cfg.USC26_XML, irs_sources, sara_source_files)
+        
+    source_fingerprint = _sha256_json({"snapshot": source_snapshot, "sara_only": sara_only_mode})
 
     chunks_stage_fingerprint = _sha256_json(
         {
@@ -388,7 +430,10 @@ def main() -> None:
         }
     else:
         print("Chunk stage cache miss: rebuilding chunks")
-        all_chunks, per_source_counts = _build_chunks(irs_sources, sara_source_files)
+        if sara_only_mode:
+            all_chunks, per_source_counts = _build_sara_only_chunks(sara_source_files)
+        else:
+            all_chunks, per_source_counts = _build_chunks(irs_sources, sara_source_files)
         cfg.CHUNKS_FILE.write_text(json.dumps(all_chunks, indent=2))
         print(f"Saved chunks -> {cfg.CHUNKS_FILE}")
 
@@ -465,7 +510,7 @@ def main() -> None:
                 f"See {cfg.GRAPH_AUDIT_FILE} for details."
             )
     else:
-        audit_report = _graph_build_and_audit(all_chunks)
+        audit_report = _graph_build_and_audit(all_chunks, sara_only_mode)
 
     if cfg.BUILD_CACHE_ENABLED:
         cache_payload = {

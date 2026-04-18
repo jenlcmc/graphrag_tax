@@ -142,8 +142,39 @@ This is a one-time step.  It parses available XML/PDF sources, builds the FAISS 
 index, and constructs the NetworkX knowledge graph.
 
 If a profile contains `knowledge/<profile>/source/` (for example SARA statute
-files like `section151`, `section63`), those text files are also indexed as
-`sara_source` chunks and linked to canonical `26 USC` sections.
+files like `section151`, `section63`), those plain-text files are parsed into
+**hierarchical chunks** and indexed as `sara_source` chunks.
+
+#### SARA source chunk hierarchy
+
+Each section file produces:
+
+| Level | Example | `parent_id` |
+| --- | --- | --- |
+| Section | `§63. Taxable income defined` (full text) | `None` |
+| Subsection | `(a) In general` | section chunk id |
+
+Subsection chunks include the section header and any intro text before `(a)` so
+each chunk is self-contained for retrieval.  Paragraphs `(1)(2)…`,
+sub-paragraphs `(A)(B)…`, and clauses `(i)(ii)…` are kept **inline** inside
+the subsection chunk rather than split further — splitting at that depth produces
+fragments too short to be useful without context.
+
+The `hierarchy` field follows the path `sara_source/<filename>/(<letter>)`, and
+`cross_refs` includes both the section reference (`26 USC §63`) and the
+subsection reference (`26 USC §63(a)`).
+
+#### SARA-only build (skip USC26 + IRS publications)
+
+```powershell
+$env:KNOWLEDGE_PROFILE="2017"
+$env:OUTPUT_PROFILE="sara"
+$env:SARA_ONLY="1"
+
+python scripts/build_pipeline.py
+```
+
+#### Standard build (USC26 + IRS + SARA source)
 
 By default, artifacts are profile-scoped under `data/processed/<profile>/`
 (for example `data/processed/2017/`). Set `PROFILED_OUTPUTS=0` to write to
@@ -827,3 +858,18 @@ You can also set per-request generation options via `OLLAMA_NUM_CTX`,
 - **vector** has best citation precision.
 - **graph** has strongest strict retrieval (best r@k_exact and mrr_exact).
 - All modes have unk_rate = 0.0000, so no Unknown predictions in this sample.
+
+Zero-Shot / Parametric Memory ("True LLM Only")
+
+- Prompt: Facts + Question.
+- Goal: Tests if the LLM actually memorized the US Tax Code during its pre-training phase. (Spoiler: Small models fail completely here).
+
+Oracle RAG ("Gold Standard")
+
+- Prompt: Facts + Question + The exact sara_statutes text provided by the dataset.
+- Goal: Establishes the absolute maximum score the LLM can achieve if the retrieval step was 100% perfect.
+
+Real RAG (Vector / Graph / Hybrid)
+
+- Prompt: Facts + Question + ONLY the chunks retrieved by your pipeline from the FAISS/Graph indexes.
+- Goal: Tests your system's actual real-world ability to navigate the tax code, find the right rule, and answer it.
