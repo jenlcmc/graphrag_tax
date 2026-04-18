@@ -95,7 +95,10 @@ def parse(source_path: Path, source: str = "sara_source") -> list[dict]:
 
         section_num = _extract_section_num(path.name, raw_text)
         section_ref = f"26 USC §{section_num}" if section_num else None
-        section_id = f"SARA Source: {section_ref}" if section_ref else f"SARA Source: {path.name}"
+        # Use the canonical USC ref directly so eval retrieval metrics (r@k, MRR) match
+        # the gold-standard IDs in the dataset. Fall back to a namespaced ID only when
+        # no section number can be extracted.
+        section_id = section_ref if section_ref else f"sara_source/{path.name}"
         title_line = next((l.strip() for l in raw_text.splitlines() if l.strip()), path.name)
 
         # Section-level chunk: full text, no parent.
@@ -119,9 +122,7 @@ def parse(source_path: Path, source: str = "sara_source") -> list[dict]:
         for letter, sub_lines in subsections:
             subsec_text = "\n".join(sub_lines).strip()
             subsec_ref = f"26 USC §{section_num}({letter})" if section_num else None
-            subsec_section_id = (
-                f"SARA Source: {subsec_ref}" if subsec_ref else f"{section_id}/({letter})"
-            )
+            subsec_section_id = subsec_ref if subsec_ref else f"{section_id}/({letter})"
 
             # Include section header + intro for self-contained context.
             context_parts = [title_line]
