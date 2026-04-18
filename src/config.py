@@ -249,7 +249,7 @@ OLLAMA_THINK = _env_bool("OLLAMA_THINK", False)
 # Use 0 / negative sentinel defaults to leave the daemon model defaults unchanged.
 OLLAMA_NUM_CTX     = max(0, _env_int("OLLAMA_NUM_CTX", 16384))
 OLLAMA_NUM_PREDICT = _env_int("OLLAMA_NUM_PREDICT", 0)
-OLLAMA_TEMPERATURE = _env_float("OLLAMA_TEMPERATURE", -1.0)
+OLLAMA_TEMPERATURE = _env_float("OLLAMA_TEMPERATURE", -1.0) # default from ollama: 0.7
 OLLAMA_TOP_P       = _env_float("OLLAMA_TOP_P", -1.0)
 # Number of GPU layers to offload (-1 = Ollama default; 99 = push all layers to GPU).
 # Set to 99 to maximise GPU usage. Ollama caps at the model's actual layer count.

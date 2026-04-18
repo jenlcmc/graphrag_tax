@@ -14,28 +14,30 @@ See [architecture.md](architecture.md) for full pipeline diagrams.
 ## How it works
 
 ```text
-IRS XML/PDF publications + Title 26 USC XML
+IRS XML/PDF publications + Title 26 USC XML + SARA statute source files
           |
-          | parse   →  usc26_parser.py, irs_xml_parser.py, irs_pdf_parser.py
-          | normalize → normalizer.py (cross-ref extraction)
-          | chunk   →  chunker.py (split at sentence boundaries)
+          | parse      →  usc26_parser.py, irs_xml_parser.py, sara_source_parser.py
+          | normalize  →  normalizer.py (cross-ref extraction)
+          | chunk      →  chunker.py (split at sentence boundaries)
           v
      annotated chunks
           |
-     +----|-----+
-     |          |
-     v          v
-  FAISS         NetworkX
-  vector index  graph index
-  (content +    (hierarchy,
-  section_id)   xref,
-                coverage edges)
-     |          |
-     +----+-----+
-          |
-          | hybrid_retriever.py (merge + re-rank)
-          v
-     top-k relevant chunks
+     +----|----------+----------+
+     |               |          |
+     v               v          v
+  FAISS           NetworkX    BM25 index
+  vector index    graph index (built from
+  (content +      (hierarchy,  vector metadata
+  section_id)     xref,        at load time)
+                  coverage)
+     |               |          |
+     +-------+-------+----------+
+             |
+             | 3-way Reciprocal Rank Fusion
+             | score = Σ weight_i / (RRF_K + rank_i)
+             | adaptive weights per query type
+             v
+     top-k relevant chunks (deduped by section_id)
           |
           | prepended as system context
           v
@@ -252,7 +254,11 @@ Useful knobs:
 
 ### Retrieval performance tuning (query stage)
 
-Vector retrieval now uses an adaptive backend:
+Hybrid retrieval uses 3-way Reciprocal Rank Fusion (dense + BM25 + graph).
+Adaptive per-query weights favour graph for §-reference queries, balance
+dense+graph for numeric queries, and default to graph+BM25 for broad queries.
+
+Vector search uses an adaptive hardware backend:
 
 1. FAISS GPU (if available)
 2. Torch CUDA matmul/top-k fallback (when CUDA exists but FAISS GPU bindings are missing)
@@ -269,7 +275,7 @@ Useful knobs:
 Graph/hybrid quality-speed knobs:
 
 - `GRAPH_MAX_ENTRY_NODES` and `GRAPH_MAX_NEIGHBORS_PER_NODE` cap traversal fanout
-- `HYBRID_SCORE_NORMALIZE=1` reduces score-scale mismatch before blending
+- `HYBRID_RRF_K` (default 60) is the RRF smoothing constant; higher values reduce the advantage of top-ranked results
 - `SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL=0` keeps SARA retrieval focused by default
 - `SARA_SUPPLEMENT_TOP_K` caps SARA supplemental retrieval chunks (independent of `TOP_K_VECTOR`)
 - `SARA_SUPPLEMENT_PRIORITIZE_ALLOWED_REFS=1` prioritizes case-allowed USC sections first
@@ -337,9 +343,9 @@ python chatbot.py
 Options:
 
 ```bash
-python chatbot.py --mode hybrid    # default: graph + vector retrieval
-python chatbot.py --mode vector    # vector index only
-python chatbot.py --mode graph     # graph traversal only
+python chatbot.py --mode hybrid    # default: 3-way RRF (dense + BM25 + graph)
+python chatbot.py --mode vector    # dense FAISS only
+python chatbot.py --mode graph     # graph BFS / community only
 python chatbot.py --mode none      # LLM only, no retrieval (baseline)
 python chatbot.py --compare        # side-by-side: hybrid vs. LLM-only
 python chatbot.py --model gemini   # use Gemini instead of Claude
@@ -352,9 +358,9 @@ OLLAMA_MODEL=llama3.2:3b python chatbot.py --model ollama
 
 ```powershell
 # PowerShell (Windows)
-python chatbot.py --mode hybrid    # default: graph + vector retrieval
-python chatbot.py --mode vector    # vector index only
-python chatbot.py --mode graph     # graph traversal only
+python chatbot.py --mode hybrid    # default: 3-way RRF (dense + BM25 + graph)
+python chatbot.py --mode vector    # dense FAISS only
+python chatbot.py --mode graph     # graph BFS / community only
 python chatbot.py --mode none      # LLM only, no retrieval (baseline)
 python chatbot.py --compare        # side-by-side: hybrid vs. LLM-only
 python chatbot.py --model gemini   # use Gemini instead of Claude
@@ -538,47 +544,65 @@ python evaluation/run_eval.py --dataset irs_form_qa --mode hybrid --model ollama
 
 ### Run SARA v3 evaluation
 
-```bash
-# Bash (Linux/macOS/WSL)
+#### Which knowledge index is used?
 
-# Default split is test
-python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
+`OUTPUT_PROFILE` selects which pre-built index folder under `data/processed/` is
+loaded at query time.  Two profiles are available after running the build steps:
 
-# Choose split via environment variable
-SARA_SPLIT=train python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
+| `OUTPUT_PROFILE` | Index folder | Built from |
+| --- | --- | --- |
+| `sara` | `data/processed/sara/` | SARA statute source files only (9 sections, no USC26 / IRS pubs) |
+| `2017` | `data/processed/2017/` | Full 2017 knowledge (USC26 + IRS pubs + SARA source files) |
 
-# Use retrieval modes once indexes are available (judge not required for SARA)
-SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model gemini --limit 5
+`OUTPUT_PROFILE` does **not** affect `none` or `oracle` modes (no index is loaded for those).
 
-# Compare LLM-only vs GraphRAG in one run (none, vector, graph, hybrid)
-SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama --limit 20
-
-# Same run with local open-source model
-SARA_SPLIT=test python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_sara_v3
-```
+#### PowerShell — SARA-only index
 
 ```powershell
-# PowerShell (Windows)
-
-# Default split is test
-python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
-
-# Choose split via environment variable
-$env:SARA_SPLIT="train"
-python evaluation/run_eval.py --dataset sara_v3 --mode none --dry-run --limit 20
-
-# Use retrieval modes once indexes are available (judge not required for SARA)
+$env:OUTPUT_PROFILE="sara"
 $env:SARA_SPLIT="test"
-python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model gemini --limit 5
+$env:OLLAMA_TEMPERATURE="0.0"   # deterministic — required for fair mode comparison
+$env:OLLAMA_TIMEOUT_SECONDS="240"
 
-# Compare LLM-only vs GraphRAG in one run (none, vector, graph, hybrid)
-$env:SARA_SPLIT="test"
-python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama --limit 20
-
-# Same run with local open-source model
-$env:SARA_SPLIT="test"
-python evaluation/run_eval.py --dataset sara_v3 --mode hybrid --model ollama --judge ollama --limit 5 --results-dir evaluation/results/ollama_sara_v3
+# All four modes in one run
+python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama `
+  --data-dir ../dataset/sara_v3 `
+  --results-dir evaluation/results/sara_only
 ```
+
+#### PowerShell — Full 2017 index
+
+```powershell
+$env:OUTPUT_PROFILE="2017"
+$env:SARA_SPLIT="test"
+$env:OLLAMA_TIMEOUT_SECONDS="240"
+
+python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama `
+  --data-dir ../dataset/sara_v3 `
+  --results-dir evaluation/results/full_2017
+```
+
+#### Bash — SARA-only index
+
+```bash
+OUTPUT_PROFILE=sara SARA_SPLIT=test \
+python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama \
+  --data-dir ../dataset/sara_v3 \
+  --results-dir evaluation/results/sara_only
+```
+
+#### Bash — Full 2017 index
+
+```bash
+OUTPUT_PROFILE=2017 SARA_SPLIT=test OLLAMA_TEMPERATURE=0.0 \
+python evaluation/run_eval.py --dataset sara_v3 --mode all --model ollama \
+  --data-dir ../dataset/sara_v3 \
+  --results-dir evaluation/results/full_2017
+```
+
+> **Always set `OLLAMA_TEMPERATURE=0.0`** when comparing modes. Without it the
+> model samples stochastically and scores can shift ±5% between identical runs,
+> making oracle-vs-none and hybrid-vs-graph comparisons unreliable.
 
 SARA runs include a per-mode comparison summary with hybrid-vs-none deltas,
 so you can directly show the impact of adding GraphRAG context.
@@ -732,9 +756,10 @@ research_789/                     repository root
 │   │   │   ├── section_linker.py inject coverage + cross-pub edges
 │   │   │   └── graph_audit.py    build-time connectivity validation
 │   │   └── retrieval/            query-time retrieval
-│   │       ├── vector_retriever.py
-│   │       ├── graph_retriever.py
-│   │       └── hybrid_retriever.py
+│   │       ├── vector_retriever.py   dense FAISS cosine search
+│   │       ├── sparse_retriever.py   Okapi BM25 exact keyword search
+│   │       ├── graph_retriever.py    BFS traversal + TF-IDF community scoring
+│   │       └── hybrid_retriever.py   3-way RRF fusion with adaptive weights
 │   ├── scripts/
 │   │   ├── build_pipeline.py     one-time index build
 │   │   ├── test_query.py         smoke-test retrieval
@@ -785,9 +810,7 @@ All settings live in [src/config.py](src/config.py).
 | `VECTOR_SEARCH_BACKEND`        | `auto`              | `auto`, `faiss`, or `torch`                 |
 | `VECTOR_TORCH_FP16`            | `True`              | fp16 torch CUDA search for speed            |
 | `VECTOR_SEARCH_SECTIONID`      | auto                | Section-id index search toggle              |
-| `HYBRID_ALPHA_DEFAULT`         | 0.35                | Graph-weighted blend; reduces IRS pub noise |
-| `HYBRID_ALPHA_SECTION_REF`     | 0.2                 | Vector weight when query cites explicit §   |
-| `HYBRID_SCORE_NORMALIZE`       | `True`              | Normalize channel scores before blending    |
+| `HYBRID_RRF_K`                 | 60                  | RRF smoothing constant (standard default)   |
 | `GRAPH_EDGE_WEIGHT_XREF`       | 3.0                 | BFS neighbor priority for xref edges        |
 | `GRAPH_EDGE_WEIGHT_COVERAGE`   | 1.8                 | BFS neighbor priority for coverage edges    |
 | `GRAPH_EDGE_WEIGHT_HIERARCHY`  | 2.2                 | BFS neighbor priority for hierarchy edges   |
