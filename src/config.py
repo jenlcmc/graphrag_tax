@@ -149,7 +149,7 @@ DUAL_VECTOR_EMBEDDING = _env_bool("DUAL_VECTOR_EMBEDDING", not LOW_RESOURCE_MODE
 # Retrieval-side FAISS GPU acceleration (CUDA only). Falls back to CPU when unavailable.
 FAISS_USE_GPU = _env_bool("FAISS_USE_GPU", True)
 FAISS_GPU_DEVICE = max(0, _env_int("FAISS_GPU_DEVICE", 0))
-FAISS_GPU_USE_FLOAT16 = _env_bool("FAISS_GPU_USE_FLOAT16", False)
+FAISS_GPU_USE_FLOAT16 = _env_bool("FAISS_GPU_USE_FLOAT16", True)
 # Repeated query texts are common in eval runs (vector + hybrid); cache encoded query vectors.
 VECTOR_QUERY_EMBED_CACHE_SIZE = max(0, _env_int("VECTOR_QUERY_EMBED_CACHE_SIZE", 1024))
 # Cache full vector query results for repeated eval queries (vector + hybrid).
@@ -160,8 +160,8 @@ VECTOR_SEARCH_BACKEND = os.getenv("VECTOR_SEARCH_BACKEND", "auto").strip().lower
 VECTOR_TORCH_FP16 = _env_bool("VECTOR_TORCH_FP16", True)
 # Skip section-id index search when dual-vector section embeddings are disabled.
 VECTOR_SEARCH_SECTIONID = _env_bool("VECTOR_SEARCH_SECTIONID", DUAL_VECTOR_EMBEDDING)
-TOP_K_VECTOR    = 7
-BFS_DEPTH       = 2 # change to 2 for more sections as 1 == relevany statue section only
+TOP_K_VECTOR    = 5
+BFS_DEPTH       = 1 # Reduced from 2 to 1 to prevent context bloat for small LLMs
 # Keep SARA retrieval query focused by default to reduce graph/vector noise.
 SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
 	"SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL", False
@@ -169,7 +169,7 @@ SARA_APPEND_TEXT_CONTEXT_TO_RETRIEVAL = _env_bool(
 # For SARA, retrieval chunks are supplemental to the per-case authoritative
 # statute block in the prompt. Keep this cap independent so we can tune SARA
 # without affecting general TaxBench retrieval.
-SARA_SUPPLEMENT_TOP_K = max(1, _env_int("SARA_SUPPLEMENT_TOP_K", 5))
+SARA_SUPPLEMENT_TOP_K = max(1, _env_int("SARA_SUPPLEMENT_TOP_K", 3))
 # Community summaries can be useful for broad questions
 SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY = _env_bool(
 	"SARA_SUPPLEMENT_ALLOW_GRAPH_COMMUNITY", False
@@ -185,7 +185,7 @@ SARA_SUPPLEMENT_ALLOWED_REFS_ONLY = _env_bool(
 	"SARA_SUPPLEMENT_ALLOWED_REFS_ONLY", True
 )
 # Trim long retrieval excerpts before adding to prompts.
-PROMPT_EXCERPT_MAX_CHARS = _env_int("PROMPT_EXCERPT_MAX_CHARS", 1000)
+PROMPT_EXCERPT_MAX_CHARS = _env_int("PROMPT_EXCERPT_MAX_CHARS", 1200)
 
 # --------------------------------------------------------------------------
 # Graph retrieval scoring constants
@@ -266,7 +266,7 @@ OLLAMA_NUM_GPU = _env_int("OLLAMA_NUM_GPU", 99)
 # How many cases to run in parallel. 1 = sequential.
 # Set > 1 only when OLLAMA_NUM_PARALLEL is also raised server-side (env var
 # on the Ollama process), otherwise concurrent requests queue and offer no gain.
-EVAL_CONCURRENCY = max(1, _env_int("EVAL_CONCURRENCY", 1))
+EVAL_CONCURRENCY = max(1, _env_int("EVAL_CONCURRENCY", 4))
 
 # Per-answer-type token caps for SARA.
 # All types now require a three-step reasoning chain (Rule → Facts → Reasoning)

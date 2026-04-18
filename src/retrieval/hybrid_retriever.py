@@ -84,12 +84,15 @@ class HybridRetriever:
 
         for r in vector_results:
             sid = r["section_id"]
-            merged[sid] = {**r, "vector_score": r.get("vector_score", 0.0), "graph_score": 0.0}
+            if sid not in merged:
+                merged[sid] = {**r, "vector_score": r.get("vector_score", 0.0), "graph_score": 0.0}
 
         for r in graph_results:
             sid = r["section_id"]
             if sid in merged:
-                merged[sid]["graph_score"] = r.get("graph_score", 0.0)
+                merged[sid]["graph_score"] = max(merged[sid]["graph_score"], r.get("graph_score", 0.0))
+                if "text" in r and len(r["text"]) > len(merged[sid].get("text", "")):
+                    merged[sid]["text"] = r["text"]
             else:
                 merged[sid] = {**r, "vector_score": 0.0, "graph_score": r.get("graph_score", 0.0)}
 

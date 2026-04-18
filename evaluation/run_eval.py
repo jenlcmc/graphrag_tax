@@ -306,10 +306,9 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
         f"{statute_block}\n"
         "Question:\n"
         f"{case.question}\n\n"
-        "Allowed section citations:\n"
-        f"{allowed_text}\n\n"
         "Task instructions:\n"
-        f"{type_instructions}"
+        f"{type_instructions}\n"
+        "Remember: Output strictly the Step 1, Step 2, Step 3, and your Final Answer format. Use only SARA case facts and SARA rules provided here."
     )
 
 
