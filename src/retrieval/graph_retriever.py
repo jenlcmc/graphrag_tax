@@ -3,17 +3,17 @@
 Two retrieval strategies are combined, following Edge et al. (2024):
 
   1. Community-level retrieval (broad queries):
-     When the query contains no explicit section reference and is short/general,
-     communities are ranked by keyword overlap and their summaries are returned.
+     Communities are ranked by TF-IDF-weighted keyword overlap with the query.
+     IDF is computed across all communities at init time so rare discriminative
+     terms (e.g. "passthrough") outweigh common ones (e.g. "income").
 
   2. Node-level retrieval (specific queries):
      Entry nodes are matched by explicit § references plus topic hints, then
      expanded by multi-hop graph traversal over hierarchy/xref/coverage edges.
-
-This module is intentionally section-aware so it can recover chains such as:
-  Pub 17 -> Pub 596 -> Schedule EIC -> 26 USC §32
+     Falls back to community mode when no entry nodes are found.
 """
 
+import math
 import re
 from collections import OrderedDict
 from pathlib import Path
@@ -152,6 +152,18 @@ class GraphRetriever:
             if not node_id_lower.startswith("26 usc §")
         ]
 
+        # IDF over community keywords for TF-IDF weighted community scoring.
+        # Rare keywords that appear in few communities are more discriminative.
+        n_communities = max(1, len(self.index.communities))
+        keyword_df: dict[str, int] = {}
+        for community in self.index.communities.values():
+            for kw in set(community.get("keywords", [])):
+                keyword_df[kw] = keyword_df.get(kw, 0) + 1
+        self._community_idf: dict[str, float] = {
+            kw: math.log((n_communities + 1) / (df + 1))
+            for kw, df in keyword_df.items()
+        }
+
     @classmethod
     def load(cls, graph_path: Path, community_path: Path):
         index = GraphIndex()
@@ -181,39 +193,64 @@ class GraphRetriever:
                 sid = community_result["section_id"]
                 results[sid] = community_result
 
-        for node_result in self._query_nodes(text, depth):
+        node_results = self._query_nodes(text, depth)
+        for node_result in node_results:
             sid = node_result["section_id"]
             if sid not in results or node_result["graph_score"] > results[sid]["graph_score"]:
                 results[sid] = node_result
+
+        # Fallback: specific query found no entry nodes → use community mode
+        # rather than returning empty-handed.
+        if not node_results and not is_broad:
+            for community_result in self._query_communities(text):
+                sid = community_result["section_id"]
+                if sid not in results:
+                    results[sid] = community_result
 
         ranked = sorted(results.values(), key=lambda r: r["graph_score"], reverse=True)
         self._cache_set(cache_key, ranked)
         return [dict(item) for item in ranked]
 
     def _query_communities(self, text: str) -> list[dict]:
-        """Return community summary results ranked by keyword overlap with query."""
+        """Rank communities by TF-IDF-weighted keyword overlap with the query.
+
+        Using IDF means rare discriminative keywords (e.g. "passthrough",
+        "exemption") contribute more than common ones (e.g. "income", "tax").
+        Raw overlap count treats all matching words equally, which biases toward
+        larger communities that happen to contain many common words.
+        """
         query_words = set(_query_terms(text))
+        if not query_words:
+            return []
 
         scored = []
         for community_id, community in self.index.communities.items():
             community_words = set(community.get("keywords", []))
-            overlap = len(query_words & community_words)
-            if overlap > 0:
-                scored.append((overlap, community_id, community))
+            matched = query_words & community_words
+            if not matched:
+                continue
+            idf_score = sum(self._community_idf.get(w, 0.0) for w in matched)
+            if idf_score > 0.0:
+                scored.append((idf_score, community_id, community))
 
         scored.sort(key=lambda x: x[0], reverse=True)
 
-        return [
-            {
-                "section_id": f"community:{community_id}",
-                "title":      f"Community {community_id} ({community['size']} sections)",
-                "source":     "graph_community",
-                "text":       community["summary"],
-                "snippet":    community["summary"][:300],
-                "graph_score": 0.9,
-            }
-            for _, community_id, community in scored[:TOP_COMMUNITIES]
-        ]
+        # Normalise graph_score: top community = 0.90, others scaled down.
+        if not scored:
+            return []
+        max_score = scored[0][0]
+        results = []
+        for idf_score, community_id, community in scored[:TOP_COMMUNITIES]:
+            normalised = 0.70 + 0.20 * (idf_score / max_score)
+            results.append({
+                "section_id":  f"community:{community_id}",
+                "title":       f"Community {community_id} ({community['size']} sections)",
+                "source":      "graph_community",
+                "text":        community["summary"],
+                "snippet":     community["summary"][:300],
+                "graph_score": normalised,
+            })
+        return results
 
     def _query_nodes(self, text: str, depth: int) -> list[dict]:
         """Find entry nodes and expand by multi-hop traversal.
