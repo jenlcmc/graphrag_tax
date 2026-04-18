@@ -266,7 +266,7 @@ OLLAMA_NUM_GPU = _env_int("OLLAMA_NUM_GPU", 99)
 # How many cases to run in parallel. 1 = sequential.
 # Set > 1 only when OLLAMA_NUM_PARALLEL is also raised server-side (env var
 # on the Ollama process), otherwise concurrent requests queue and offer no gain.
-EVAL_CONCURRENCY = max(1, _env_int("EVAL_CONCURRENCY", 4))
+EVAL_CONCURRENCY = max(1, _env_int("EVAL_CONCURRENCY", 1))
 
 # Per-answer-type token caps for SARA.
 # All types now require a three-step reasoning chain (Rule → Facts → Reasoning)
