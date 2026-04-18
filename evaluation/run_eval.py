@@ -50,10 +50,13 @@ from src.utils.reference_matching import best_match_score
 
 
 # ---------------------------------------------------------------------------
-# Retrieval modes (maps to the four experimental conditions)
+# Retrieval modes (maps to the experimental conditions)
+# none: Parametric memory only (Zero-shot LLM, no context)
+# oracle: Gold-standard context from dataset
+# vector/graph/hybrid: True RAG evaluations
 # ---------------------------------------------------------------------------
 
-ALL_MODES = ["none", "vector", "graph", "hybrid"]
+ALL_MODES = ["none", "oracle", "vector", "graph", "hybrid"]
 
 # ---------------------------------------------------------------------------
 # LLM-as-judge
@@ -230,12 +233,13 @@ def _clip_excerpt(text: str, max_chars: int) -> str:
     return f"{clipped}..."
 
 
-def _build_sara_user_prompt(case: EvalCase) -> str:
-    """Build SARA case prompt with explicit facts, citation constraints, and reasoning structure."""
+def _build_sara_user_prompt(case: EvalCase, mode: str) -> str:
+    """Build SARA case prompt using IRAC structure and explicit facts/citation constraints."""
     text_context = str(case.metadata.get("context", "")).strip()
     structured_facts = str(case.metadata.get("facts", "")).strip()
     expected_type = str(case.metadata.get("expected_type", "freeform")).strip().lower()
     allowed_refs = list(case.metadata.get("allowed_refs") or case.relevant_ids or [])
+    
     if allowed_refs:
         shown = allowed_refs[:24]
         if len(allowed_refs) > 24:
@@ -243,60 +247,51 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
         else:
             allowed_text = ", ".join(shown)
     else:
-        allowed_text = "(not provided; cite section references from the SARA statute text)"
+        allowed_text = "(not provided; cite section references from your context)"
 
+    # Base IRAC Instructions
     if expected_type == "label":
         label_options = _sara_label_options(case)
         label_choices = " / ".join(label_options)
         type_instructions = (
             f"This is a legal entailment task.\n"
-            f"Step 1 — Legal Rule: What exact condition does the cited law impose?\n"
-            f"Step 2 — Facts Applied: Do the case facts satisfy every condition?\n"
-            f"Step 3 — Reasoning: Why does this lead to entailment or contradiction?\n"
+            f"Step 1 — Issue: What exact legal condition is being asked?\n"
+            f"Step 2 — Rule: What rule or condition governs this issue based on the provided context?\n"
+            f"Step 3 — Application: Show how the facts map to the rule.\n"
             f"Final Answer must be exactly one of: {label_choices}"
         )
     elif expected_type == "numeric":
         type_instructions = (
             "This is a numeric calculation task.\n"
-            "IMPORTANT: Use ONLY the dollar amounts, rates, and thresholds from the "
-            "SARA Authoritative Statute Text provided above — do NOT use tax rates "
-            "from your training knowledge.\n"
-            "Step 1 — Legal Rule: Copy the exact formula or bracket table from the statute text above.\n"
-            "Step 2 — Facts Applied: Substitute each case value into the formula.\n"
-            "Step 3 — Arithmetic: Show every calculation step with actual numbers.\n"
+            "Step 1 — Issue: What exact amount or calculation is requested?\n"
+            "Step 2 — Rule: Copy the exact formula, rates, or bracket tables from the legal context.\n"
+            "Step 3 — Application: Substitute each case value into the formula and show arithmetic.\n"
             "Final Answer must be a number (digits only, no $ sign, no commas)."
-        )
-    elif expected_type == "string":
-        type_instructions = (
-            "This is a factual lookup task.\n"
-            "Step 1 — Legal Rule: What does the cited law define or provide?\n"
-            "Step 2 — Facts Applied: Which case details are relevant?\n"
-            "Step 3 — Reasoning: How do you arrive at the answer?\n"
-            "Final Answer must be the specific value."
         )
     else:
         type_instructions = (
-            "Step 1 — Legal Rule: Identify the relevant rule.\n"
-            "Step 2 — Facts Applied: Apply it to the case facts.\n"
-            "Step 3 — Reasoning: Explain the conclusion.\n"
-            "Final Answer must be present."
+            "This is a factual lookup task.\n"
+            "Step 1 — Issue: What does the question ask?\n"
+            "Step 2 — Rule: Identify the relevant rule.\n"
+            "Step 3 — Application: Apply it to the case facts to arrive at the answer.\n"
+            "Final Answer must be the specific value."
         )
 
     facts_block = (
         "Statutory facts in Prolog notation — s<section>(<person>, <amount/status>, ..., <year>).\n"
-        "Example: s63(\"Alice\",2017,26948) means Alice's §63 taxable income in 2017 is $26,948.\n"
-        f"{structured_facts}"
-        if structured_facts
-        else "(no structured facts provided)"
+        f"{structured_facts}" if structured_facts else "(no structured facts provided)"
     )
 
+    # -------------------------------------------------------------------------
+    # CRITICAL: Fix "Oracle vs True LLM vs True RAG" testing fairness
+    # -------------------------------------------------------------------------
     sara_statutes = str(case.metadata.get("sara_statutes", "")).strip()
-    statute_block = (
-        "\nSARA Authoritative Statute Text (use these exact thresholds and formulas):\n"
-        f"{sara_statutes}\n"
-        if sara_statutes
-        else ""
-    )
+    if mode == "oracle" and sara_statutes:
+        statute_block = f"\nSARA Authoritative Statute Text (Oracle Gold Context):\n{sara_statutes}\n"
+    else:
+        # None, Vector, Graph, Hybrid DO NOT get the oracle text!
+        # `none` tests parametric memory. RAG modes test retrieved chunk quality!
+        statute_block = "\n(Use retrieved context provided via the system prompt or your baseline knowledge, do NOT invent rules outside your context)\n"
 
     return (
         "SARA Case Text (%Text):\n"
@@ -306,8 +301,11 @@ def _build_sara_user_prompt(case: EvalCase) -> str:
         f"{statute_block}\n"
         "Question:\n"
         f"{case.question}\n\n"
+        "Allowed section citations:\n"
+        f"{allowed_text}\n\n"
         "Task instructions:\n"
         f"{type_instructions}\n"
+        "CRITICAL: You must ONLY cite sections exactly as they appear in the 'Allowed section citations' list above. Do NOT cite any other sections, sub-sections, or clauses you see in the text.\n"
         "Remember: Output strictly the Step 1, Step 2, Step 3, and your Final Answer format. Use only SARA case facts and SARA rules provided here."
     )
 
@@ -821,7 +819,7 @@ def run_case(
         response = _MOCK_RESPONSE
     else:
         system = build_system_prompt(chunks)
-        user_prompt = _build_sara_user_prompt(case) if is_sara else case.question
+        user_prompt = _build_sara_user_prompt(case, mode) if is_sara else case.question
         if is_sara:
             system = f"{system}{_build_sara_system_append(case)}"
         max_tokens = _sara_max_tokens(case) if is_sara else None
